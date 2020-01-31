@@ -17,3 +17,7 @@ HalfGammon Neural Network
 
 # 使い方
 docs/index.html 参照
+
+# スポンサー
+本プロジェクトは下記スポンサー様のご支援を受けています。ありがとうございます。
+- 古賀製作所 様

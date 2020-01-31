@@ -14,3 +14,6 @@ HalfGammon Neural Network
   - 深層強化学習（AlphaZero と同じ、上記がうまくいかなかった場合）
   - TD(γ) 学習（TD-Gammon と同じ、深層強化学習がうまくいかなかった場合）
 - ライセンス：MIT
+
+# 使い方
+docs/index.html 参照

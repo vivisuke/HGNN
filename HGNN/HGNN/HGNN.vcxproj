@@ -145,11 +145,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HGBoard.cpp" />
     <ClCompile Include="HGNN.cpp" />
     <ClCompile Include="HGNNet.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HGBoard.h" />
     <ClInclude Include="HGNNet.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

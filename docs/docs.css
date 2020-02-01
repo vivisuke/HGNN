@@ -1,0 +1,90 @@
+﻿@charset "UTF-8";
+
+body
+{
+	width: 800px;
+	margin-left: 20px;
+	font-size: 12pt;
+	line-height: 140%;
+	font-family: メイリオ;
+}
+#title
+{
+	font-size: 18px;
+	font-weight: bold;
+	text-align: center;
+}
+#author
+{
+	font-size: 16px;
+	text-align: center;
+}
+#date
+{
+	font-size: 14px;
+	text-align: center;
+}
+#content
+{
+	font-size: 14px;
+}
+#newpage
+{
+	page-break-before: always;
+}
+h1
+{
+	font-size: 18px;
+	border-left: 20px solid darkblue;
+	padding-left: 10px;
+}
+h2
+{
+	border-left: 10px solid orange;
+	padding-left: 10px;
+	text-align: lefe;
+}
+h3
+{
+	border-bottom: 1px solid lightgray;
+}
+td, th, tr
+{
+	margin: 0;
+	padding: 2px;
+	border-bottom: 1px solid black;
+}
+.important
+{
+	color: red;
+	font-weight: bold;
+}
+.code
+{
+	line-height: 100%;
+	background-color: #ffffd0;
+	padding: 8px;
+}
+.sample
+{
+	font-family: "Courie New";
+	background-color: lightgray;
+	padding: 4px;
+}
+.comment
+{
+	color: green;
+}
+.quotation
+{
+	border: 1 solid gray;
+}
+.emphasize
+{
+	color: red;
+	font-weight: bold;
+}
+.empBG
+{
+	background-color: lightyellow;
+}

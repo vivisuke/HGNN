@@ -2,9 +2,74 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
+	<link rel="stylesheet" href="docs.css" type="text/css" />
+    <script src="prettify.js" type="text/javascript"></script>
+    <link href="prettify.css" rel="stylesheet" type="text/css"/>
 	<title>HGNN</title>
 </head>
-<body>
-	
+<body onload="prettyPrint()">
+<div id=title>HGNN - HalfGammon Neural Network -</div>
+<div id=author>Copyright (C) 2020 by N.Tsuda</div>
+
+<h2>概要</h2>
+<p>「HGNN - HalfGammon Neural Network -」は、人工ニューラルネット（ANN）を使用し、ハーフギャモンの状態から得点期待値を予測する</p>
+<ul>
+	<li>「人工ニューラルネット（Artificial Neural Network）」は、生物の脳細胞を簡略化したニューロンをネットワーク化したもの</li>
+	<li>「<a href="http://vivi.dyndns.org/games/HalfGammon/">ハーフギャモン</a>」とは、
+	通常の<a href="https://ja.wikipedia.org/wiki/%E3%83%90%E3%83%83%E3%82%AF%E3%82%AE%E3%83%A3%E3%83%A2%E3%83%B3">バックギャモン</a>
+	の盤面サイズ・石数・ダイスの目を（ほぼ）半分にしたボードゲーム</li>
+	<li>ハーフギャモンは、通常の勝ち負け以外に、終局時のある条件によりギャモン勝ち、バックギャモン勝ちがあり、それぞれの得点は±１，±２，±３となる</li>
+</ul>
+<h3>目次</h3>
+<ul>
+	<li><a href="#HowToUse">HGNN 使用方法</a></li>
+	<ul>
+		<li><a href="#constructNN">ネットワーク構築</a></li>
+		<li><a href="#learning">学習</a></li>
+		<li><a href="#predict">予測</a></li>
+	</ul>
+	<li><a href="#example">HGNN 使用例</a></li>
+	<ul>
+		<li><a href="#linearFunc">線形関数</a></li>
+		<li><a href="#sin">sin関数</a></li>
+	</ul>
+</ul>
+
+<h2 id="HowToUse">HGNN 使用方法</h2>
+<p>ビルド環境：Visual Studio 2019、C++</p>
+<p>HGNN の使用方法は以下の通り</p>
+<ol>
+	<li>人工ニューラルネット（ANN）構築</li>
+	<li>入力・教師値データを使って学習</li>
+	<li>入力を与え、結果を予測</li>
+</ol>
+<p>以下、具体的なソースコードを示す</p>
+
+<h3 id="constructNN">ネットワーク構築</h3>
+<p></p>
+<pre class="prettyprint">
+#include <vector>
+#include "HGNNet.h"
+using namespace std;
+.....
+    HGNNet nn;     // ニューラルネットオブジェクト生成
+    nn.init(vector<int>{2, 10}, TANH);   // 入力層：２ノード、１隠れ層・10ノード、活性化関数：tanh
+</pre>
+
+<h3 id="learning">学習</h3>
+<p></p>
+
+<h3 id="predict">予測</h3>
+<p></p>
+
+<h2 id="example">HGNN 使用例</h2>
+
+<h3 id="linearFunc">線形関数</h3>
+<p>「y = 3*x1 - 2*x2 + 1」、２層NN</p>
+
+<h3 id="sinFunc">sin関数</h3>
+<p></p>
+
+
 </body>
 </html>

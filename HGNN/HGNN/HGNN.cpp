@@ -34,6 +34,7 @@ void test_randomPlayOut();
 void test_expScoreRPO();
 void test_expScoreRPO2();
 void test_readData();
+void test_sinFunc();				//	sin(2πx) を学習、x: [-1, +1]
 void test_HGNNet();
 void test_NNdiff();
 void test_121();
@@ -58,6 +59,7 @@ int main()
 	//test_expScoreRPO2();
 	//test_readData();
 	//test_HGNNet();
+	test_sinFunc();
 	//test_NNdiff();
 	//test_121();
 	//test_1201();
@@ -65,7 +67,7 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	test_learnRPO();
+	//test_learnRPO();
 	//test_ReLU();
 	//test_ReLU2();
 	//
@@ -716,6 +718,35 @@ void test_HGNNet()
 		{
 			cout << "10^" << log10(cnt) << "\t" << sinRMS(nn) << endl;
 		}
+	}
+}
+void test_sinFunc()
+{
+	HGNNet nn;
+	vector<ActFunc> lst = {SIGMOID, TANH, RELU};
+	for(auto af: lst) {
+		cout << "# node of layers: {1 50 50 1}, ";
+		switch( af ) {
+		case SIGMOID:	cout << "SIGMOID:\n\n";	break;
+		case TANH:		cout << "TANH:\n\n";	break;
+		case RELU:		cout << "RELU:\n\n";	break;
+		}
+		cout << "N\tRMS\n";
+		cout << "------- ----------\n";
+		nn.init(vector<int>{1, 50, 50}, af);
+		vector<double> input(1);
+		//	学習
+		for (int cnt = 1; cnt <= 100000; ++cnt) {
+			input[0] = g_rand11(g_mt);		//	[-1, +1]
+			//double sc = nn.predict(input);		//	for test
+			nn.train(input, sin(input[0]*2*PI));
+			//if( cnt == 10 || cnt == 100 || cnt == 1000 || cnt == 10000 || cnt == 100000 || cnt == 1000000 )
+			if( log10(cnt) == (int)log10(cnt) )
+			{
+				cout << "10^" << log10(cnt) << "\t" << sinRMS(nn) << endl;
+			}
+		}
+		cout << endl;
 	}
 }
 #if	0

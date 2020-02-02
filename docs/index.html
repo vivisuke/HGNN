@@ -24,7 +24,7 @@
 <ul>
 	<li><a href="#HowToUse">HGNN 使用方法</a></li>
 	<ul>
-		<li><a href="#constructNN">ネットワーク構築</a></li>
+		<li><a href="#constructNN">ニューラルネット構築</a></li>
 		<li><a href="#learning">学習</a></li>
 		<li><a href="#predict">予測</a></li>
 	</ul>
@@ -43,24 +43,63 @@
 	<li>入力・教師値データを使って学習</li>
 	<li>入力を与え、結果を予測</li>
 </ol>
-<p>以下、具体的なソースコードを示す</p>
+<!--<p>以下、具体的なソースコードを示す</p>-->
 
-<h3 id="constructNN">ネットワーク構築</h3>
-<p></p>
+<h3 id="constructNN">ニューラルネット構築</h3>
+<p>ニューラルネットを構築するコード例を以下に示す。</p>
 <pre class="prettyprint">
 #include &lt;vector&gt;
 #include "HGNNet.h"
 using namespace std;
 .....
     HGNNet nn;     // ニューラルネットオブジェクト生成
-    nn.init(vector<int>{2, 10}, TANH);   // 入力層：２ノード、１隠れ層・10ノード、活性化関数：tanh
+    nn.init(vector&lt;int&gt;{2, 10}, TANH);   // 入力層：２ノード、１隠れ層・10ノード、活性化関数：tanh
 </pre>
+<p>最初に標準ライブラリの vector をインクルードする。これはニューラルネットの層数・各層のノード数を指定するために使用する。</p>
+<p>ニューラルネットクラス HGNNet のヘッダもインクルードしておく。</p>
+<p>「using namespace std;」は好みで記述するといいだろう。記述しておけば、以下「std::」を省略できる。</p>
+<p>「HGNNet nn;」で、ニューラルネットオブジェクトを生成する。引数は特に必要ない。</p>
+<p>ついで、HGNNet::init(vector&lt;int&gt;&amp;, ActFunc) をコールし、ニューラルネットを初期化する。重み係数は [-1, +1] でランダムに初期化される。
+<br>第一引数は層数・各層のノード数を指定する。HGNNet は出力に回帰だけをサポートしており、出力ノードは１固定なので、出力ノードは指定しない。
+入力層ノード数に続けて、隠れ層の分だけ各層のノード数を記述する。下記のように vector オブジェクトの生成を分けてもいいが、１行で書く方が簡潔で筆者の好みだ。</p>
+<pre class="prettyprint">
+    vector&lt;int&gt; nodes = {2, 10};
+    nn.init(nodes, TANH);
+</pre>
+<p>隠れ層が複数ある場合は、その数だけ隠れ層のノード数を記述する。下記は隠れ層が２層の場合の例だ。</p>
+<pre class="prettyprint">
+    nn.init(vector&lt;int&gt;{2, 10, 10}, TANH);
+</pre>
+<p>HGNNet::init() の第２引数には活性化関数を指定する。SIGMOID, TANH, RELU が指定可能だ。各々、シグモイド関数、tanh関数、ReLU関数を示す。
+<br>これらの活性化関数は隠れ層の演算の時に用いられる。HGNNet の出力は回帰なので、活性化関数は適用されない（あえて言えば恒等関数だ）。</p>
 
 <h3 id="learning">学習</h3>
-<p></p>
+<pre class="prettyprint">
+    vector&lt;data_t&gt; input;
+    input に入力データを設定
+    data_t T = 教師値;
+    nn.train(input, T);
+</pre>
+<p>学習（トレーニング）を行うには、上記の様に、入力データを vector&lt;data_t&gt; に設定し、それと教師値を引数にして HGNNet::train() をコールする。
+<br>data_t は HGNNet.h で宣言されたデータ型識別子で、double が割り当てられている。メモリが不足する場合などは float に定義し直すという選択肢もある。
+<br>学習を行うと誤差逆伝播法を用いてネットワークの重み係数が教師値に近づくように少し変化する。</p>
+<p>train() の第３引数で係数修正の度合いを学習率で指定できる。デフォルトは 0.01 である。この値が大きいと学習が速く進むが、その反面発散確率が高まる。
+<br>なので、徐々に学習率を下げながら学習を行うというテクニック（adagrad 等）も存在する。</p>
+<pre class="prettyprint">
+    vector&lt;data_t&gt; input;
+    input に入力データを設定
+    data_t T = 教師値;
+    nn.train(input, T, 0.001);       //  学習係数指定
+</pre>
 
 <h3 id="predict">予測</h3>
-<p></p>
+<p>学習が終わったネットワークに対し、nn.predict() をコールすることで、入力値から教師値に近い値を予測することができる。</p>
+<p>コードは以下のように、vector&lt;data_t&gt; に入力データを設定し、predict() をコールすると、予測値を返してくれる。</p>
+<pre class="prettyprint">
+    vector&lt;data_t&gt; input;
+    input に入力データを設定
+    auto v = nn.predict(input);
+</pre>
 
 <h2 id="example">HGNN 使用例</h2>
 

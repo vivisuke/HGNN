@@ -20,6 +20,12 @@
 	の盤面サイズ・石数・ダイスの目を（ほぼ）半分にしたボードゲーム</li>
 	<li>ハーフギャモンは、通常の勝ち負け以外に、終局時のある条件によりギャモン勝ち、バックギャモン勝ちがあり、それぞれの得点は±１，±２，±３となる</li>
 </ul>
+
+<h3>リンク</h3>
+<ul>
+	<li>プロジェクトのダウンロードは <a href="https://github.com/vivisuke/HGNN">github</a> から</li>
+</ul>
+
 <h3>目次</h3>
 <ul>
 	<li><a href="#HowToUse">HGNN 使用方法</a></li>
@@ -105,6 +111,42 @@ using namespace std;
 
 <h3 id="linearFunc">線形関数</h3>
 <p>「y = 3*x1 - 2*x2 + 1」、２層NN</p>
+<pre class="prettyprint">
+data_t linearFunc(data_t x1, data_t x2) { return x1*3 - x2*2 + 1; }
+double linearRMS(HGNNet&amp; nn, int N_LOOP = 100)
+{
+    vector&lt;double&gt; input(2);
+    double sum2 = 0;
+    for (int i = 0; i &lt; N_LOOP; ++i) {
+        input[0] = g_rand11(g_mt);       // [-1, +1]
+        input[1] = g_rand11(g_mt);       // [-1, +1]
+        double err = nn.predict(input) - linearFunc(input[0], input[1]);
+        sum2 += err * err;
+    }
+    return sqrt(sum2 / N_LOOP);
+}
+void test_linearFunc()
+{
+    HGNNet nn;
+    cout &lt;&lt; "# node of layers: {2 1}\n\n";
+    nn.init(vector&lt;int&gt;{2}, SIGMOID);    // ２入力のみ（隠れ層無し）
+    vector&lt;double&gt; input(2);
+    // 学習・評価
+    cout &lt;&lt; "N\tRMS\n";
+    cout &lt;&lt; "------- ----------\n";
+    for (int cnt = 1; cnt &lt;= 10000; ++cnt) {
+        input[0] = g_rand11(g_mt);       // [-1, +1]
+        input[1] = g_rand11(g_mt);       // [-1, +1]
+        nn.train(input, linearFunc(input[0], input[1]));
+        if( log10(cnt) == (int)log10(cnt) )
+        {
+            cout &lt;&lt; "10^" &lt;&lt; log10(cnt) &lt;&lt; "\t" &lt;&lt; linearRMS(nn) &lt;&lt; endl;
+        }
+    }
+    cout &lt;&lt; "\n" &lt;&lt; nn.dump() &lt;&lt; "\n";
+}
+</pre>
+
 
 <h3 id="sinFunc">sin関数</h3>
 <p></p>

@@ -34,6 +34,7 @@ void test_randomPlayOut();
 void test_expScoreRPO();
 void test_expScoreRPO2();
 void test_readData();
+void test_linearFunc();			//	y = 3*x1 - 2*x2 + 1、x1,x2: [-1, +1]
 void test_sinFunc();				//	sin(2πx) を学習、x: [-1, +1]
 void test_HGNNet();
 void test_NNdiff();
@@ -59,7 +60,8 @@ int main()
 	//test_expScoreRPO2();
 	//test_readData();
 	//test_HGNNet();
-	test_sinFunc();
+	test_linearFunc();
+	//test_sinFunc();
 	//test_NNdiff();
 	//test_121();
 	//test_1201();
@@ -719,6 +721,39 @@ void test_HGNNet()
 			cout << "10^" << log10(cnt) << "\t" << sinRMS(nn) << endl;
 		}
 	}
+}
+data_t linearFunc(data_t x1, data_t x2) { return x1*3 - x2*2 + 1; }
+double linearRMS(HGNNet& nn, int N_LOOP = 100)
+{
+	vector<double> input(2);
+	double sum2 = 0;
+	for (int i = 0; i < N_LOOP; ++i) {
+		input[0] = g_rand11(g_mt);		//	[-1, +1]
+		input[1] = g_rand11(g_mt);		//	[-1, +1]
+		double err = nn.predict(input) - linearFunc(input[0], input[1]);
+		sum2 += err * err;
+	}
+	return sqrt(sum2 / N_LOOP);
+}
+void test_linearFunc()
+{
+	HGNNet nn;
+	cout << "# node of layers: {2 1}\n\n";
+	nn.init(vector<int>{2}, SIGMOID);		//	２入力のみ（隠れ層無し）
+	vector<double> input(2);
+	//	学習・評価
+	cout << "N\tRMS\n";
+	cout << "------- ----------\n";
+	for (int cnt = 1; cnt <= 10000; ++cnt) {
+		input[0] = g_rand11(g_mt);		//	[-1, +1]
+		input[1] = g_rand11(g_mt);		//	[-1, +1]
+		nn.train(input, linearFunc(input[0], input[1]));
+		if( log10(cnt) == (int)log10(cnt) )
+		{
+			cout << "10^" << log10(cnt) << "\t" << linearRMS(nn) << endl;
+		}
+	}
+	cout << "\n" << nn.dump() << "\n";
 }
 void test_sinFunc()
 {

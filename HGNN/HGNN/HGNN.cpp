@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <assert.h>
 #include "utils.h"
 #include "HGNNet.h"
 #include "HGBoard.h"
@@ -49,6 +50,7 @@ void test_ReLU2();			//	ランダムプレイアウトによるスコア期待�
 void genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
 void test_learnRPO();		//	ランダムプレイアウトによるスコア期待値を学習
 void otg_genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
+void test_load_save();
 
 void test_OTGBoard();
 
@@ -60,7 +62,7 @@ int main()
 	//test_expScoreRPO2();
 	//test_readData();
 	//test_HGNNet();
-	test_linearFunc();
+	//test_linearFunc();
 	//test_sinFunc();
 	//test_NNdiff();
 	//test_121();
@@ -72,6 +74,7 @@ int main()
 	//test_learnRPO();
 	//test_ReLU();
 	//test_ReLU2();
+	test_load_save();
 	//
 	//genDataRPO();
 	//otg_genDataRPO();
@@ -995,4 +998,14 @@ void test_genMoves()
 		for(auto& mv: mvs) cout << mv.text() << " ";
 		cout << endl;
 	}
+}
+void test_load_save()
+{
+	HGNNet nn, nn2;
+	nn.init(vector<int>{2, 10, 10}, TANH);
+	auto r = nn.save("dump.txt");
+	assert( r );
+	r = nn2.load("dump.txt");
+	assert( r );
+	assert( nn == nn2 );
 }

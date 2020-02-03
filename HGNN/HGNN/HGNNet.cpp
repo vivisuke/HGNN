@@ -8,6 +8,8 @@
 //----------------------------------------------------------------------
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <algorithm>
 #include <math.h>
 #include <random>
@@ -82,7 +84,7 @@ void HGNNet::init(const std::vector<int>& lst, ActFunc actFunc, double alpha)
 	for (auto& w : layer[0].m_weight) w = g_rand11(g_mt);		//	係数 [-1, +1] 乱数初期化
 }
 //	入力 → 回帰予測
-data_t HGNNet::predict(const std::vector<data_t>& input)				//	予測
+data_t HGNNet::predict(const std::vector<data_t>& input)			//	予測
 {
 	if (input.size() != m_nInput) {
 		//cout << "input.size() = " << input.size() << ", m_nInput = " << m_nInput << "\n";
@@ -276,6 +278,23 @@ void HGNNet::calcError(const std::vector<data_t>& input, data_t t)
 		}
 	}
 }
+bool HGNNet::operator==(const HGNNet& nn) const
+{
+	if( m_layers.size() != nn.m_layers.size() ) return false;
+	for(int l = 0; l != m_layers.size(); ++l) {
+		if( m_layers[l].size() != nn.m_layers[l].size() )
+			return false;
+		for (int n = 0; n != m_layers[l].size(); ++n) {
+			if( m_layers[l][n].m_weight.size() != nn.m_layers[l][n].m_weight.size() )
+				return false;
+			for (int i = 0; i != m_layers[l][n].m_weight.size(); ++i) {
+				if( (float)m_layers[l][n].m_weight[i] != (float)nn.m_layers[l][n].m_weight[i] )
+					return false;
+			}
+		}
+	}
+	return true;
+}
 std::string HGNNet::dump() const
 {
 	string txt = "#node of layers: ";
@@ -283,11 +302,27 @@ std::string HGNNet::dump() const
 	for (const auto& layer : m_layers)
 		txt += to_string(layer.size()) + " ";
 	txt += "\n";
+	txt += "actFunc: ";
+	switch( m_actFunc ) {
+	case SIGMOID:	txt += "SIGMOID";	break;
+	case TANH:	txt += "TANH";	break;
+	case RELU:	txt += "RELU";	break;
+	}
+	txt += "\n";
+	//stringstream ss;
+	char buf[30];		//	for double text
 	for (const auto& layer : m_layers) {
 		txt += "wt: ";
 		for (const auto& node : layer) {
-			txt += "(";
-			for (auto w : node.m_weight) txt += to_string(w) + " ";
+			txt += "( ";
+			for (auto w : node.m_weight) {
+				//txt += to_string(w) + " ";
+				//ss << w;
+				//txt += ss.str() + " ";
+				sprintf_s(buf, "%.17g", w);
+				txt += buf;
+				txt += " ";
+			}
 			txt += ") ";
 		}
 		txt += "\n";
@@ -304,7 +339,7 @@ void HGNNet::makeWeightSeq()			//	係数を 0.1, 0.2, ... に設定、for Test
 		}
 	}
 }
-std::string HGNNet::dumpPredict(const std::vector<data_t>& input) const
+std::string HGNNet::dumpPredict(const std::vector<data_t>& input) //const
 {
 	string txt = "input: ";
 	predict(input);
@@ -334,5 +369,54 @@ std::string HGNNet::dumpBP() const
 }
 bool HGNNet::save(cchar* fname) const		//	指定ファイルにネットワークの状態を保存
 {
+	ofstream ofs(fname);
+	if( !ofs ) return false;
+	ofs << dump();
+	ofs.close();
+	return true;
+}
+bool HGNNet::load(cchar* fname)
+{
+	ifstream ifs(fname);
+	if( !ifs ) return false;
+	string buf, buf2, buf3;
+	ifs >> buf >> buf2 >> buf3;
+	if( buf != "#node" || buf2 != "of" || buf3 != "layers:" ) {
+		ifs.close();
+		return false;
+	}
+	vector<int> lst;
+	for (;;) {
+		ifs >> buf;
+		if( buf.empty() || !isdigit(buf[0]) ) break;
+		lst.push_back(atoi(&buf[0]));
+	}
+	if( lst.back() != 1 ) return false;		//	出力層は回帰のみサポート
+	lst.pop_back();		//	remove 出力層
+	ActFunc af;
+	if( buf != "actFunc:" ) return false;
+	ifs >> buf;
+	if( buf == "SIGMOID" ) af = SIGMOID;
+	else if( buf == "TANH" ) af = TANH;
+	else if( buf == "RELU" ) af = RELU;
+	else return false;
+	init(lst, af);
+	//
+	ifs >> buf;
+	for(int l = 0; buf == "wt:"; ++l) {
+		if( l >= m_layers.size() ) return false;
+		ifs >> buf;
+		for(int n = 0; buf == "("; ++n) {
+			if( n >= m_layers[l].size() ) return false;
+			for (int i = 0;; ++i) {
+				ifs >> buf;
+				if (buf == ")") break;
+				if( i >= m_layers[l][n].m_weight.size() ) return false;
+				m_layers[l][n].m_weight[i] = std::stod(buf);
+			}
+			ifs >> buf;
+		}
+	}
+	ifs.close();
 	return true;
 }

@@ -55,8 +55,9 @@ class HGNNet {
 public:
 	HGNNet();
 public:
+	bool operator==(const HGNNet&) const;
 	std::string	dump() const;
-	std::string	dumpPredict(const std::vector<data_t>& input) const;		//	for Test、
+	std::string	dumpPredict(const std::vector<data_t>& input);		//	for Test、
 	std::string	dumpBP() const;		//	for Test、バックプロパゲーションのための誤差・微分値を表示
 	bool	save(cchar*) const;		//	指定ファイルにネットワークの状態を保存
 public:
@@ -74,7 +75,7 @@ public:
 	//	学習、第１引数：入力値、第２引数：教師値
 	void	calcError(const std::vector<data_t>& input, data_t t);		//	誤差逆伝搬計算のみ for Test
 	bool	load(cchar*);
-	bool	save(cchar*);
+	//bool	save(cchar*);
 	void	makeWeightSeq();			//	係数を 0.1, 0.2, ... に設定、for Test
 public:
 	bool			m_batchNrmlz;		//	バッチ・ノーマライゼーション

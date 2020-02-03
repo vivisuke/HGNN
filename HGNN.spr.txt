@@ -95,9 +95,9 @@
 ◎ C 01/28 01/28 0.001 ToDo HGNNet：∂L/∂input[0] を計算し、input[0] を微増させ、Lの変化量をチェック
 ◎ C 01/30 01/30 0.001 ToDo HGNNet::init() に引数を増やし、各層でバッチ・ノーマライゼーションを行うかどうかを指定可能に
 ◎ C 01/31 01/31 0.001 ToDo 学習用データを data ディレクトリ下に配置
-● C 02/01             ToDo 
-● C 02/01             ToDo 
-● C 02/01             ToDo 
-● C 02/01             ToDo 
-● C 02/01             ToDo 
-● C 02/01             ToDo 
+● C 02/03             ToDo 
+● C 02/03             ToDo 
+● C 02/03             ToDo 
+● C 02/03             ToDo 
+● C 02/03             ToDo 
+● C 02/03             ToDo 

@@ -56,8 +56,9 @@ public:
 	HGNNet();
 public:
 	std::string	dump() const;
-	std::string	dumpPredict(const std::vector<data_t>& input);		//	for Test、
-	std::string	dumpBP();		//	for Test、バックプロパゲーションのための誤差・微分値を表示
+	std::string	dumpPredict(const std::vector<data_t>& input) const;		//	for Test、
+	std::string	dumpBP() const;		//	for Test、バックプロパゲーションのための誤差・微分値を表示
+	bool	save(cchar*) const;		//	指定ファイルにネットワークの状態を保存
 public:
 	//	初期化
 	//		第１引数：入力・隠れ層レイヤーのユニット数リスト、出力レイヤーは指定しない

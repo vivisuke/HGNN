@@ -304,7 +304,7 @@ void HGNNet::makeWeightSeq()			//	係数を 0.1, 0.2, ... に設定、for Test
 		}
 	}
 }
-std::string HGNNet::dumpPredict(const std::vector<data_t>& input)
+std::string HGNNet::dumpPredict(const std::vector<data_t>& input) const
 {
 	string txt = "input: ";
 	predict(input);
@@ -320,7 +320,7 @@ std::string HGNNet::dumpPredict(const std::vector<data_t>& input)
 	return txt;
 }
 //	for Test、バックプロパゲーションのための誤差・微分値を表示
-std::string HGNNet::dumpBP()
+std::string HGNNet::dumpBP() const
 {
 	string txt;
 	for (const auto& layer : m_layers) {
@@ -331,4 +331,8 @@ std::string HGNNet::dumpBP()
 		txt += "\n";
 	}
 	return txt;
+}
+bool HGNNet::save(cchar* fname) const		//	指定ファイルにネットワークの状態を保存
+{
+	return true;
 }

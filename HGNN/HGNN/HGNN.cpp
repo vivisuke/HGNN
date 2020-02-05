@@ -55,6 +55,9 @@ void test_learnRPO10();		//	ランダムプレイアウトによるスコア期�
 void otg_genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
 void test_load_save();
 void test_negaMax1();
+void test_negaMax1_prime();			//	とある局面でのチェック
+void test_negaMax1_random();		//	negaMax1 対 ランダム
+void test_negaMax1_random_stat(int N_GAME = 100);		//	negaMax1 対 ランダム 統計
 
 void test_OTGBoard();
 
@@ -86,7 +89,10 @@ int main()
 	//genDataRPO();
 	//otg_genDataRPO();
 	//
-	test_negaMax1();
+	//test_negaMax1();
+	test_negaMax1_prime();
+	//test_negaMax1_random();
+	//test_negaMax1_random_stat(1000);
 	//
 	//test_OTGBoard();
 	//HGBoard bd;
@@ -1094,6 +1100,21 @@ void test_load_save()
 	assert( r );
 	assert( nn == nn2 );
 }
+void test_negaMax1_prime()
+{
+	HGNNet nn;
+	bool rc = nn.load("RPO1000x10.txt");
+	assert( rc );
+	HGBoard bd;
+	bd.set("0022002110000002020000100030");
+	cout << bd.text() << "\n";
+	cout << "black expct score = " << bd.b_expctScore(nn) << "\n";
+	Moves mvs;
+	bd.negaMax1(mvs, nn, 1, 1);
+	cout << "11: ";
+	for(auto mv: mvs) cout << mv.text() << " ";
+	cout << "\n";
+}
 void test_negaMax1()
 {
 	HGNNet nn;
@@ -1130,4 +1151,91 @@ void test_negaMax1()
 			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
 		}
 	}
+}
+void test_negaMax1_random()
+{
+	HGNNet nn;
+	bool rc = nn.load("RPO1000x10.txt");
+	assert( rc );
+	HGBoard bd;
+	cout << bd.text() << "\n";
+	bool bt = true;
+	for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+		int d1, d2;
+		do {
+			d1 = g_mt() % 3 + 1;
+			d2 = g_mt() % 3 + 1;
+		} while (d1 == d2 && cnt == 1);
+		Moves mvs;
+		if( bt ) {
+			bd.negaMax1(mvs, nn, d1, d2);
+			if( !mvs.empty() )
+				bd.b_move(mvs);
+		} else {
+			MovesList lst;
+			bd.w_genMovesList(lst, d1, d2);
+			if (!lst.empty()) {
+				mvs = lst[g_mt() % lst.size()];
+				bd.w_move(mvs);
+			}
+		}
+		cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+		for(auto mv: mvs) cout << mv.text() << " ";
+		cout << "\n";
+		cout << bd.text();	// << "\n";
+		if( bd.result() != 0 ) break;
+		if( !bt ) {
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n\n";
+		} else {
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
+		}
+	}
+}
+void test_negaMax1_random_stat(int N_GAME)
+{
+	cout << "Black(NN) vs White(Random):\n";
+	HGNNet nn;
+	bool rc = nn.load("RPO1000x10.txt");
+	assert( rc );
+	HGBoard bd;
+	int nBlackWin = 0;
+	for (int gc = 0; gc != N_GAME; ++gc) {
+		if( gc % 10 == 0 ) cout << ".";
+		bd.init();
+		//cout << bd.text() << "\n";
+		bool bt = true;
+		for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+			int d1, d2;
+			do {
+				d1 = g_mt() % 3 + 1;
+				d2 = g_mt() % 3 + 1;
+			} while (d1 == d2 && cnt == 1);
+			Moves mvs;
+			if( bt ) {
+				bd.negaMax1(mvs, nn, d1, d2);
+				if( !mvs.empty() )
+					bd.b_move(mvs);
+			} else {
+				MovesList lst;
+				bd.w_genMovesList(lst, d1, d2);
+				if (!lst.empty()) {
+					mvs = lst[g_mt() % lst.size()];
+					bd.w_move(mvs);
+				}
+			}
+			//cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+			//for(auto mv: mvs) cout << mv.text() << " ";
+			//cout << "\n";
+			//cout << bd.text();	// << "\n";
+			if( bd.result() != 0 ) break;
+			if( !bt ) {
+				//cout << "black: exp score = " << bd.b_expctScore(nn) << "\n\n";
+			} else {
+				//cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
+			}
+		}
+		if( bd.result() > 0 ) nBlackWin += 1;
+	}
+	cout << "\n";
+	cout << "Black win rate: " << nBlackWin << " / " << N_GAME << " = " << nBlackWin*100.0/N_GAME << "%\n";
 }

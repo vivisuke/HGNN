@@ -100,5 +100,10 @@
 ● C 02/04             ToDo test_learnRPO() 学習後：学習結果を RPOYYYYMMDDHHMMSS.txt で自動保存
 ◎ C 02/05 02/05 0.001 ToDo test_negaMax1()：現在の評価値表示
 ◎ C 02/05 02/05 0.001 ToDo test_negaMax1()：negaMax1 同士対戦
+◎ C 02/05 02/05 0.001 ToDo test_negaMax1_random()：negaMax1 対 ランダム
+● C 02/05             ToDo negaMax1() によるプレイアウトでの学習データ生成を可能に
+● C 02/05             ToDo 
+● C 02/05             ToDo 
+● C 02/05             ToDo 
 ● C 02/05             ToDo 
 ● C 02/05             ToDo 

@@ -1102,7 +1102,7 @@ void test_negaMax1()
 	HGBoard bd;
 	cout << bd.text() << "\n";
 	bool bt = true;
-	for(int cnt = 1; bd.result() == 0; ++cnt, bt = !bt) {		//	終局でない間
+	for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
 		int d1, d2;
 		do {
 			d1 = g_mt() % 3 + 1;
@@ -1122,6 +1122,12 @@ void test_negaMax1()
 		cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
 		for(auto mv: mvs) cout << mv.text() << " ";
 		cout << "\n";
-		cout << bd.text() << "\n";
+		cout << bd.text();	// << "\n";
+		if( bd.result() != 0 ) break;
+		if( !bt ) {
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n\n";
+		} else {
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
+		}
 	}
 }

@@ -485,6 +485,17 @@ void HGBoard::setInputNmlz(std::vector<double>& input) const				//	•½‹Ï‚OA•ªU‚
 	double std2 = sum2 / ix - ave * ave;
 	for(auto& x: input) x = (x - ave) / sqrt(std2 + 1e-6);
 }
+double HGBoard::b_expctScore(class HGNNet& nn) const					//	•”Ô ƒXƒRƒAŠú‘Ò’li•—L—˜‚È‚çƒvƒ‰ƒX‚Ì’lj
+{
+	vector<double> input;
+	setInput(input);
+	return nn.predict(input);
+}
+double HGBoard::w_expctScore(class HGNNet& nn) const					//	”’”Ô ƒXƒRƒAŠú‘Ò’li”’—L—˜‚È‚çƒvƒ‰ƒX‚Ì’lj
+{
+	HGBoard b2(m_white, m_black);
+	return b2.b_expctScore(nn);
+}
 //	•”ÔE‚Pèæ“Ç‚İEHGNNet ‚É‚æ‚é“¾“_Šú‘Ò’l‚É‚æ‚èÅ“Kèæ“¾
 void HGBoard::negaMax1(Moves& mvs, class HGNNet& nn, int d1, int d2) const
 {

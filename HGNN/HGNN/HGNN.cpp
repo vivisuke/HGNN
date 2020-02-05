@@ -32,8 +32,8 @@ public:
 
 void test_genMoves();
 void test_randomPlayOut();
-void test_expScoreRPO();
-void test_expScoreRPO2();
+void test_expctScoreRPO();
+void test_expctScoreRPO2();
 void test_readData();
 void test_linearFuncArg1();			//	y = 2*x - 1、x: [-1, +1]
 void test_linearFunc();			//	y = 3*x1 - 2*x2 + 1、x1,x2: [-1, +1]
@@ -50,6 +50,7 @@ void test_2argsFunc();	//	f(x, y) = { R = sqrt(x*x + y*y) + 1e-4; return sin(R) 
 void test_ReLU();			//	ランダムプレイアウトによるスコア期待値を学習 での発散テスト
 void test_ReLU2();			//	ランダムプレイアウトによるスコア期待値を学習 での発散テスト
 void genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
+void genDataNN();			//	学習済みNNプレイアウトにより 状態 → 期待スコア学習データ生成
 void test_learnRPO(bool verbose = true);		//	ランダムプレイアウトによるスコア期待値を学習
 void test_learnRPO10();		//	ランダムプレイアウトによるスコア期待値を学習
 void otg_genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
@@ -65,8 +66,8 @@ int main()
 {
 	//test_genMoves();
 	//test_randomPlayOut();
-	//test_expScoreRPO();
-	//test_expScoreRPO2();
+	//test_expctScoreRPO();
+	//test_expctScoreRPO2();
 	//test_readData();
 	//test_HGNNet();
 	//test_linearFuncArg1();
@@ -87,10 +88,11 @@ int main()
 	//test_load_save();
 	//
 	//genDataRPO();
+	genDataNN();
 	//otg_genDataRPO();
 	//
 	//test_negaMax1();
-	test_negaMax1_prime();
+	//test_negaMax1_prime();
 	//test_negaMax1_random();
 	//test_negaMax1_random_stat(1000);
 	//
@@ -189,9 +191,9 @@ void test_OTGBoard()
 		cout << bd.text() << "\n";
 		cout << (bt?"b ":"w ") << bd.ktext() << " ";
 		if( bt )
-			cout << bd.b_expScoreRPO(N_RPO) << endl << endl;
+			cout << bd.b_expctScoreRPO(N_RPO) << endl << endl;
 		else
-			cout << bd.w_expScoreRPO(N_RPO) << endl << endl;
+			cout << bd.w_expctScoreRPO(N_RPO) << endl << endl;
 		otg_doRandomTurn(bd, bt, cnt, d1, d2, mvs);
 		cout << cnt << ") " << d1 << d2 << " ";
 		for(auto& mv: mvs) cout << mv.text() << " ";
@@ -254,13 +256,13 @@ double calcRMS_RPO(HGNNet& nn, int N_GAME = 10)
 		for (int tcnt = 1;; ++tcnt, bt = !bt) {
 			if( tcnt != 1 ) {
 				if( bt ) {
-					auto sc = bd.b_expScoreRPO(N_RPO);
+					auto sc = bd.b_expctScoreRPO(N_RPO);
 					bd.setInputNmlz(input);
 					auto ps = nn.predict(input);
 					sum2 += (sc - ps) * (sc - ps);
 				} else {
 					HGBoard b2(bd.m_white, bd.m_black);		//	白黒反転盤面
-					auto sc = b2.b_expScoreRPO(N_RPO);		//	[-3, +3]
+					auto sc = b2.b_expctScoreRPO(N_RPO);		//	[-3, +3]
 					b2.setInputNmlz(input);
 					auto ps = nn.predict(input);
 					sum2 += (sc - ps) * (sc - ps);
@@ -488,9 +490,9 @@ void test_readData()
 			ifs >> ktext >> score;
 			bd.set(ktext);
 			if( bw == "b" )
-				sc2 = bd.b_expScoreRPO(N_GAME);
+				sc2 = bd.b_expctScoreRPO(N_GAME);
 			else
-				sc2 = bd.w_expScoreRPO(N_GAME);
+				sc2 = bd.w_expctScoreRPO(N_GAME);
 			sum2 += (score - sc2) * (score - sc2);
 			cout << bw << " " << ktext << " " << score << " " << sc2 << endl;
 			++cnt;
@@ -898,11 +900,11 @@ void otg_genDataRPO()
 		for (int cnt = 1;; ++cnt, bt = !bt) {
 			if( cnt != 1 ) {
 				if( bt ) {
-					cout << "b " << bd.ktext() << " " << bd.b_expScoreRPO(N_GAME) << endl;
-					//cout << "black turn exp score = " << bd.b_expScoreRPO(N_GAME) << endl << endl;
+					cout << "b " << bd.ktext() << " " << bd.b_expctScoreRPO(N_GAME) << endl;
+					//cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl << endl;
 				} else {
-					cout << "w " << bd.ktext() << " " << bd.w_expScoreRPO(N_GAME) << endl;
-					//cout << "white turn exp score = " << bd.w_expScoreRPO(N_GAME) << endl << endl;
+					cout << "w " << bd.ktext() << " " << bd.w_expctScoreRPO(N_GAME) << endl;
+					//cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl << endl;
 				}
 			}
 			otg_doRandomTurn(bd, bt, cnt, d1, d2, mvs);
@@ -932,11 +934,11 @@ void genDataRPO()
 		for (int cnt = 1;; ++cnt, bt = !bt) {
 			if( cnt != 1 ) {
 				if( bt ) {
-					cout << "b " << bd.ktext() << " " << bd.b_expScoreRPO(N_GAME) << endl;
-					//cout << "black turn exp score = " << bd.b_expScoreRPO(N_GAME) << endl << endl;
+					cout << "b " << bd.ktext() << " " << bd.b_expctScoreRPO(N_GAME) << endl;
+					//cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl << endl;
 				} else {
-					cout << "w " << bd.ktext() << " " << bd.w_expScoreRPO(N_GAME) << endl;
-					//cout << "white turn exp score = " << bd.w_expScoreRPO(N_GAME) << endl << endl;
+					cout << "w " << bd.ktext() << " " << bd.w_expctScoreRPO(N_GAME) << endl;
+					//cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl << endl;
 				}
 			}
 			int d1, d2;
@@ -969,7 +971,65 @@ void genDataRPO()
 		}
 	}
 }
-void test_expScoreRPO2()
+//	学習済みプレイアウトにより 状態 → 期待スコア学習データ生成
+void genDataNN()
+{
+	HGNNet nn;
+	bool rc = nn.load("RPO1000x10.txt");
+	assert( rc );
+	//	局面期待値スコア計算のためのゲーム数
+#ifdef _DEBUG
+	const int N_GAME = 10;
+#else
+	const int N_GAME = 100;
+#endif
+	HGBoard bd;
+	for (int g = 1; g <= 100; ++g) {		//	100対局
+		cout << "# " << g << endl;
+		bd.init();
+		//cout << bd.text() << endl;
+		bool bt = true;
+		for (int cnt = 1;; ++cnt, bt = !bt) {
+			if( cnt != 1 ) {
+				if( bt ) {
+					cout << "b " << bd.ktext() << " " << bd.b_expctScoreNNPO(nn, N_GAME) << endl;
+					//cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl << endl;
+				} else {
+					cout << "w " << bd.ktext() << " " << bd.w_expctScoreNNPO(nn, N_GAME) << endl;
+					//cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl << endl;
+				}
+			}
+			int d1, d2;
+			do {
+				d1 = g_mt() % 3 + 1;
+				d2 = g_mt() % 3 + 1;
+			} while (d1 == d2 && cnt == 1);
+			//cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+			MovesList lst;
+			Moves mvs;
+			if (bt) {
+				bd.b_genMovesList(lst, d1, d2);
+				if (!lst.empty()) {
+					mvs = lst[g_mt() % lst.size()];
+					bd.b_move(mvs);
+				}
+			}
+			else {
+				bd.w_genMovesList(lst, d1, d2);
+				if (!lst.empty()) {
+					mvs = lst[g_mt() % lst.size()];
+					bd.w_move(mvs);
+				}
+			}
+			//for (const auto& mv : mvs) cout << mv.text() << " ";
+			//cout << "\n";
+			//cout << bd.text();
+			//cout << bd.ktext() << endl;
+			if (bd.result() != 0) break;
+		}
+	}
+}
+void test_expctScoreRPO2()
 {
 	HGBoard bd;
 	//bd.set(	"6200000000000003300002000000");
@@ -984,10 +1044,10 @@ void test_expScoreRPO2()
 #else
 	const int N_GAME = 1000;
 #endif
-	cout << "black turn exp score = " << bd.b_expScoreRPO(N_GAME) << endl;
-	cout << "white turn exp score = " << bd.w_expScoreRPO(N_GAME) << endl;
+	cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl;
+	cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl;
 }
-void test_expScoreRPO()
+void test_expctScoreRPO()
 {
 	HGBoard bd;
 #if	1
@@ -1001,9 +1061,9 @@ void test_expScoreRPO()
 	const int N_GAME = 1000;
 #endif
 			if( bt ) {
-				cout << "black turn exp score = " << bd.b_expScoreRPO(N_GAME) << endl << endl;
+				cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl << endl;
 			} else {
-				cout << "white turn exp score = " << bd.w_expScoreRPO(N_GAME) << endl << endl;
+				cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl << endl;
 			}
 		}
 		int d1, d2;
@@ -1039,7 +1099,7 @@ void test_expScoreRPO()
 	bd.b_setAt(3, 2);
 	bd.w_setAt(3, 2);
 	cout << bd.text() << endl;
-	cout << bd.b_expScoreRPO(100) << endl;
+	cout << bd.b_expctScoreRPO(100) << endl;
 #endif
 }
 void test_randomPlayOut()

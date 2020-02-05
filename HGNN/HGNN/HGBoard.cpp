@@ -397,9 +397,36 @@ void HGBoard::w_unMove(const Move& mv) {
 	}
 	m_white[(int)mv.m_src] += 1;
 }
+double HGBoard::b_expctScoreNNPO(class HGNNet& nn, int N_GAME) const					//	黒番 NNモンテカルロ法スコア期待値
+{
+	int sum = 0;
+	for (int i = 0; i < N_GAME; ++i) {
+		HGBoard b2(*this);
+		int resultSGB;
+		for(bool bt = true;; bt = !bt) {
+			MovesList lst;
+			int d1 = g_mt() % 3 + 1;
+			int d2 = g_mt() % 3 + 1;
+			Moves mvs;
+			if( !bt ) b2.swapBW();
+			b2.negaMax1(mvs, nn, d1, d2);
+			if( !mvs.empty() )
+				b2.b_move(mvs);
+			if( !bt ) b2.swapBW();
+			if( (resultSGB = b2.resultSGB()) != 0 ) break;
+		}
+		sum += resultSGB;
+	}
+	return (double)sum / N_GAME;
+}
+double HGBoard::w_expctScoreNNPO(class HGNNet& nn, int N_GAME) const				//	白番 NNモンテカルロ法スコア期待値
+{
+	HGBoard b2(m_white, m_black);
+	return b2.b_expctScoreNNPO(nn, N_GAME);
+}
 //	ランダムプレイアウトによる得点期待値計算、黒番固定
 //	リターン値がプラスならば黒有利
-double HGBoard::b_expScoreRPO(int N_GAME) const
+double HGBoard::b_expctScoreRPO(int N_GAME) const
 {
 	int sum = 0;
 	for (int i = 0; i < N_GAME; ++i) {
@@ -426,10 +453,10 @@ double HGBoard::b_expScoreRPO(int N_GAME) const
 }
 //	ランダムプレイアウトによる得点期待値計算
 //	リターン値がプラスならば白有利
-double HGBoard::w_expScoreRPO(int N_GAME) const
+double HGBoard::w_expctScoreRPO(int N_GAME) const
 {
 	HGBoard b2(m_white, m_black);
-	return b2.b_expScoreRPO(N_GAME);
+	return b2.b_expctScoreRPO(N_GAME);
 }
 void HGBoard::setInput(vector<double>& input) const
 {

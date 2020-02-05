@@ -51,6 +51,7 @@ void test_ReLU();			//	ランダムプレイアウトによるスコア期待値
 void test_ReLU2();			//	ランダムプレイアウトによるスコア期待値を学習 での発散テスト
 void genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
 void genDataNN();			//	学習済みNNプレイアウトにより 状態 → 期待スコア学習データ生成
+void test_learnNNPO(bool verbose = true);		//	ランダムプレイアウトによるスコア期待値を学習
 void test_learnRPO(bool verbose = true);		//	ランダムプレイアウトによるスコア期待値を学習
 void test_learnRPO10();		//	ランダムプレイアウトによるスコア期待値を学習
 void otg_genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
@@ -81,6 +82,7 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
+	//test_learnNNPO(true);
 	//test_learnRPO(false);
 	//test_learnRPO10();
 	//test_ReLU();
@@ -88,13 +90,13 @@ int main()
 	//test_load_save();
 	//
 	//genDataRPO();
-	genDataNN();
+	//genDataNN();
 	//otg_genDataRPO();
 	//
 	//test_negaMax1();
 	//test_negaMax1_prime();
 	//test_negaMax1_random();
-	//test_negaMax1_random_stat(1000);
+	test_negaMax1_random_stat(1000);
 	//
 	//test_OTGBoard();
 	//HGBoard bd;
@@ -380,6 +382,116 @@ void test_ReLU()
 		//cout << nn.dump() << "\n";
 		cout << "RMS = " << calcRMS_RPO(nn, 10) << endl;
 	}
+}
+double calcRMS_NNPO(HGNNet& nn, int N_GAME = 10)
+{
+	HGBoard bd;
+	const int N_PO = 10;
+	int nt = 0;		//	テスト数
+	double sum2 = 0;
+	vector<double> input(HG_NN_INSIZE);
+	for (int i = 0; i < N_GAME; ++i) {
+		cout << ".";
+		bd.init();
+		bool bt = true;
+		for (int tcnt = 1;; ++tcnt, bt = !bt) {
+			if( tcnt != 1 ) {
+				if( bt ) {
+					auto sc = bd.b_expctScoreNNPO(nn, N_PO);
+					bd.setInputNmlz(input);
+					auto ps = nn.predict(input);
+					sum2 += (sc - ps) * (sc - ps);
+				} else {
+					HGBoard b2(bd.m_white, bd.m_black);		//	白黒反転盤面
+					auto sc = b2.b_expctScoreNNPO(nn, N_PO);		//	[-3, +3]
+					b2.setInputNmlz(input);
+					auto ps = nn.predict(input);
+					sum2 += (sc - ps) * (sc - ps);
+				}
+				++nt;
+			}
+			doRandomTurn(bd, bt, tcnt);
+			if( bd.result() != 0 ) break;
+		}
+	}
+	cout << "\n";
+	return sqrt(sum2/nt);
+}
+void test_learnNNPO(bool verbose)
+{
+	const bool batchNrmlz = true;
+	HGBoard bd;
+	//
+	HGNNet nn;
+#if	0
+	double ALPHA = 0.001;
+#if	0
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE}, RELU);
+#elif 1
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, RELU);
+#else
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, RELU);
+#endif
+#else
+	double ALPHA = 0.01;
+#if	0
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE}, TANH);
+#elif 1
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH, batchNrmlz);
+#else
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH);
+#endif
+#endif
+	vector<double> input(HG_NN_INSIZE);
+	bd.setInputNmlz(input);
+	auto sc = nn.predict(input);
+	if( verbose )
+		cout << "RMS = " << calcRMS_NNPO(nn) << endl;
+	//
+	vector<DataItem> data;
+	readData(data, "data/NNPO100-001.txt");
+	readData(data, "data/NNPO100-002.txt");
+	readData(data, "data/NNPO100-003.txt");
+	readData(data, "data/NNPO100-004.txt");
+	readData(data, "data/NNPO100-005.txt");
+	readData(data, "data/NNPO100-006.txt");
+	readData(data, "data/NNPO100-007.txt");
+	readData(data, "data/NNPO100-008.txt");
+	readData(data, "data/NNPO100-009.txt");
+	readData(data, "data/NNPO100-010.txt");
+	if( data.empty() ) {
+		cout << "can't open data file.\n";
+		return;
+	}
+	for (int i = 0; i < 10; ++i) {
+		if( !verbose ) cout << "*";
+		std::shuffle(data.begin(), data.end(), g_mt);
+		for(const auto& di: data) {
+			if( di.m_bturn ) {
+				bd.set(di.m_ktext);
+				//bd.setInput(input);
+				bd.setInputNmlz(input);
+				nn.learn(input, di.m_score, ALPHA);
+			} else {
+				bd.set(di.m_ktext);
+				bd.swapBW();
+				//bd.setInput(input);
+				bd.setInputNmlz(input);
+				nn.learn(input, di.m_score, ALPHA);
+			}
+		}
+		if( verbose )
+			cout << "RMS = " << calcRMS_NNPO(nn) << endl;
+	}
+	if( !verbose )
+		cout << "RMS = " << calcRMS_NNPO(nn) << endl;
+	nn.save("NNPO1000x10.txt");
 }
 void test_learnRPO(bool verbose)
 {
@@ -1255,7 +1367,8 @@ void test_negaMax1_random_stat(int N_GAME)
 {
 	cout << "Black(NN) vs White(Random):\n";
 	HGNNet nn;
-	bool rc = nn.load("RPO1000x10.txt");
+	//bool rc = nn.load("RPO1000x10.txt");
+	bool rc = nn.load("NNPO1000x10.txt");
 	assert( rc );
 	HGBoard bd;
 	int nBlackWin = 0;

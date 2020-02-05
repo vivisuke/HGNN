@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "utils.h"
 #include "HGBoard.h"
+#include "HGNNet.h"
 
 using namespace std;
 
@@ -483,4 +484,30 @@ void HGBoard::setInputNmlz(std::vector<double>& input) const				//	•½‹Ï‚OA•ªU‚
 	double ave = sum / ix;
 	double std2 = sum2 / ix - ave * ave;
 	for(auto& x: input) x = (x - ave) / sqrt(std2 + 1e-6);
+}
+//	•”ÔE‚Pèæ“Ç‚İEHGNNet ‚É‚æ‚é“¾“_Šú‘Ò’l‚É‚æ‚èÅ“Kèæ“¾
+void HGBoard::negaMax1(Moves& mvs, class HGNNet& nn, int d1, int d2) const
+{
+	MovesList lst;
+	b_genMovesList(lst, d1, d2);
+	if( lst.empty() ) {
+		mvs.clear();
+		return;
+	}
+	double mxev = -9999;
+	int mxi = 0;
+	vector<double> input;
+	int i = 0;
+	for (; i != lst.size(); ++i) {
+		HGBoard b2(*this);
+		b2.b_move(lst[i]);
+		b2.swapBW();
+		b2.setInput(input);
+		double ev = -nn.predict(input);
+		if( ev > mxev ) {
+			mxev = ev;
+			mxi = i;
+		}
+	}
+	mvs = lst[mxi];
 }

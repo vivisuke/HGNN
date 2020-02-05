@@ -35,7 +35,9 @@ void test_randomPlayOut();
 void test_expScoreRPO();
 void test_expScoreRPO2();
 void test_readData();
+void test_linearFuncArg1();			//	y = 2*x - 1、x: [-1, +1]
 void test_linearFunc();			//	y = 3*x1 - 2*x2 + 1、x1,x2: [-1, +1]
+//void test_linearFuncAF();			//	y = 3*x1 - 2*x2 + 1、x1,x2: [-1, +1]、すべての活性化関数
 void test_sinFunc();				//	sin(2πx) を学習、x: [-1, +1]
 void test_HGNNet();
 void test_NNdiff();
@@ -44,13 +46,15 @@ void test_1201();
 void test_1221();
 void test_120201();
 void test_12221();
-void test_2argsFunc();
+void test_2argsFunc();	//	f(x, y) = { R = sqrt(x*x + y*y) + 1e-4; return sin(R) / R
 void test_ReLU();			//	ランダムプレイアウトによるスコア期待値を学習 での発散テスト
 void test_ReLU2();			//	ランダムプレイアウトによるスコア期待値を学習 での発散テスト
 void genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
-void test_learnRPO();		//	ランダムプレイアウトによるスコア期待値を学習
+void test_learnRPO(bool verbose = true);		//	ランダムプレイアウトによるスコア期待値を学習
+void test_learnRPO10();		//	ランダムプレイアウトによるスコア期待値を学習
 void otg_genDataRPO();		//	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
 void test_load_save();
+void test_negaMax1();
 
 void test_OTGBoard();
 
@@ -62,7 +66,9 @@ int main()
 	//test_expScoreRPO2();
 	//test_readData();
 	//test_HGNNet();
+	//test_linearFuncArg1();
 	//test_linearFunc();
+	//##test_linearFuncAF();
 	//test_sinFunc();
 	//test_NNdiff();
 	//test_121();
@@ -71,13 +77,16 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	//test_learnRPO();
+	//test_learnRPO(false);
+	//test_learnRPO10();
 	//test_ReLU();
 	//test_ReLU2();
-	test_load_save();
+	//test_load_save();
 	//
 	//genDataRPO();
 	//otg_genDataRPO();
+	//
+	test_negaMax1();
 	//
 	//test_OTGBoard();
 	//HGBoard bd;
@@ -364,7 +373,7 @@ void test_ReLU()
 		cout << "RMS = " << calcRMS_RPO(nn, 10) << endl;
 	}
 }
-void test_learnRPO()
+void test_learnRPO(bool verbose)
 {
 	const bool batchNrmlz = true;
 	HGBoard bd;
@@ -398,7 +407,8 @@ void test_learnRPO()
 	vector<double> input(HG_NN_INSIZE);
 	bd.setInputNmlz(input);
 	auto sc = nn.predict(input);
-	cout << "RMS = " << calcRMS_RPO(nn) << endl;
+	if( verbose )
+		cout << "RMS = " << calcRMS_RPO(nn) << endl;
 	//
 	vector<DataItem> data;
 	readData(data, "data/RPO100-001.txt");
@@ -416,6 +426,7 @@ void test_learnRPO()
 		return;
 	}
 	for (int i = 0; i < 10; ++i) {
+		if( !verbose ) cout << "*";
 		std::shuffle(data.begin(), data.end(), g_mt);
 		for(const auto& di: data) {
 			if( di.m_bturn ) {
@@ -431,8 +442,12 @@ void test_learnRPO()
 				nn.learn(input, di.m_score, ALPHA);
 			}
 		}
-		cout << "RMS = " << calcRMS_RPO(nn) << endl;
+		if( verbose )
+			cout << "RMS = " << calcRMS_RPO(nn) << endl;
 	}
+	if( !verbose )
+		cout << "RMS = " << calcRMS_RPO(nn) << endl;
+	nn.save("RPO1000x10.txt");
 }
 void test_readData()
 {
@@ -507,13 +522,13 @@ double func2RMS(HGNNet& nn, bool bNormalize, int N_LOOP = 1000)
 }
 void test_2argsFunc()
 {
-	const bool bNormalize = true;
+	const bool bNormalize = false;
 	cout << "f(x, y) = { R = sqrt(x*x + y*y) + 1e-4; return sin(R) / R; }\n";
 	cout << "# node of layers: {2 20 20 1}, RELU," << (!bNormalize?"NOT":"") << " normalized:\n\n";
 	cout << "N\tRMS\n";
 	cout << "------- ----------\n";
     HGNNet nn;
-    nn.init(vector<int>{2, 20, 20}, RELU, true);
+    nn.init(vector<int>{2, 20, 20}, RELU, true, 0.001);
     //cout << nn.dump() << "\n";
     vector<data_t> input(2);
 #if 0
@@ -725,6 +740,41 @@ void test_HGNNet()
 		}
 	}
 }
+data_t linearArg1Func(data_t x) { return x*3 - 1; }
+double linearArg1RMS(HGNNet& nn, int N_LOOP = 100)
+{
+	vector<double> input(1);
+	double sum2 = 0;
+	for (int i = 0; i < N_LOOP; ++i) {
+		input[0] = g_rand11(g_mt);		//	[-1, +1]
+		//normalize(input[0], input[1]);
+		double err = nn.predict(input) - linearArg1Func(input[0]);
+		sum2 += err * err;
+	}
+	return sqrt(sum2 / N_LOOP);
+}
+void test_linearFuncArg1()
+{
+	HGNNet nn;
+	cout << "f(x) = 3*x - 1\n";
+	double alpha = 10.0;
+	cout << "# node of layers: {1 1}, alpha = " << alpha << "\n\n";
+	nn.init(vector<int>{1}, SIGMOID, alpha);		//	1入力のみ（隠れ層無し）、活性化関数は無視される
+	vector<double> input(1);
+	//	学習・評価
+	cout << "N\tRMS\n";
+	cout << "------- ----------\n";
+	for (int cnt = 1; cnt <= 10000; ++cnt) {
+		input[0] = g_rand11(g_mt);		//	[-1, +1]
+		//normalize(input[0], input[1]);
+		nn.train(input, linearArg1Func(input[0]));
+		if( log10(cnt) == (int)log10(cnt) )
+		{
+			cout << "10^" << log10(cnt) << "\t" << linearArg1RMS(nn) << "\t" << nn.dumpWeight(false);
+		}
+	}
+	//cout << "\n" << nn.dump() << "\n";
+}
 data_t linearFunc(data_t x1, data_t x2) { return x1*3 - x2*2 + 1; }
 double linearRMS(HGNNet& nn, int N_LOOP = 100)
 {
@@ -733,6 +783,7 @@ double linearRMS(HGNNet& nn, int N_LOOP = 100)
 	for (int i = 0; i < N_LOOP; ++i) {
 		input[0] = g_rand11(g_mt);		//	[-1, +1]
 		input[1] = g_rand11(g_mt);		//	[-1, +1]
+		//normalize(input[0], input[1]);
 		double err = nn.predict(input) - linearFunc(input[0], input[1]);
 		sum2 += err * err;
 	}
@@ -741,8 +792,9 @@ double linearRMS(HGNNet& nn, int N_LOOP = 100)
 void test_linearFunc()
 {
 	HGNNet nn;
+	cout << "f(x1, x2) = 3*x1 - 2*x2 + 1\n";
 	cout << "# node of layers: {2 1}\n\n";
-	nn.init(vector<int>{2}, SIGMOID);		//	２入力のみ（隠れ層無し）
+	nn.init(vector<int>{2}, SIGMOID, 0.01);		//	２入力のみ（隠れ層無し）、活性化関数は無視される
 	vector<double> input(2);
 	//	学習・評価
 	cout << "N\tRMS\n";
@@ -750,14 +802,47 @@ void test_linearFunc()
 	for (int cnt = 1; cnt <= 10000; ++cnt) {
 		input[0] = g_rand11(g_mt);		//	[-1, +1]
 		input[1] = g_rand11(g_mt);		//	[-1, +1]
+		//normalize(input[0], input[1]);
 		nn.train(input, linearFunc(input[0], input[1]));
 		if( log10(cnt) == (int)log10(cnt) )
 		{
-			cout << "10^" << log10(cnt) << "\t" << linearRMS(nn) << endl;
+			cout << "10^" << log10(cnt) << "\t" << linearRMS(nn) << "\t" << nn.dumpWeight(false);
 		}
 	}
-	cout << "\n" << nn.dump() << "\n";
+	//cout << "\n" << nn.dump() << "\n";
 }
+#if	0
+void test_linearFuncAF()
+{
+	HGNNet nn;
+	cout << "f(x1, x2) = 3*x1 - 2*x2 + 1\n\n";
+	vector<ActFunc> lst = {SIGMOID, TANH, RELU};
+	for(auto af: lst) {
+		cout << "# node of layers: {1 50 50 1}, ";
+		switch( af ) {
+		case SIGMOID:	cout << "SIGMOID:\n\n";	break;
+		case TANH:		cout << "TANH:\n\n";	break;
+		case RELU:		cout << "RELU:\n\n";	break;
+		}
+		cout << "# node of layers: {2 1}\n\n";
+		nn.init(vector<int>{2}, af);		//	２入力のみ（隠れ層無し）
+		vector<double> input(2);
+		//	学習・評価
+		cout << "N\tRMS\n";
+		cout << "------- ----------\n";
+		for (int cnt = 1; cnt <= 10000; ++cnt) {
+			input[0] = g_rand11(g_mt);		//	[-1, +1]
+			input[1] = g_rand11(g_mt);		//	[-1, +1]
+			nn.train(input, linearFunc(input[0], input[1]));
+			if( log10(cnt) == (int)log10(cnt) )
+			{
+				cout << "10^" << log10(cnt) << "\t" << linearRMS(nn) << "\t" << nn.dumpWeight(false);
+			}
+		}
+	}
+	//cout << "\n" << nn.dump() << "\n";
+}
+#endif
 void test_sinFunc()
 {
 	HGNNet nn;
@@ -1008,4 +1093,35 @@ void test_load_save()
 	r = nn2.load("dump.txt");
 	assert( r );
 	assert( nn == nn2 );
+}
+void test_negaMax1()
+{
+	HGNNet nn;
+	bool rc = nn.load("RPO1000x10.txt");
+	assert( rc );
+	HGBoard bd;
+	cout << bd.text() << "\n";
+	bool bt = true;
+	for(int cnt = 1; bd.result() == 0; ++cnt, bt = !bt) {		//	終局でない間
+		int d1, d2;
+		do {
+			d1 = g_mt() % 3 + 1;
+			d2 = g_mt() % 3 + 1;
+		} while (d1 == d2 && cnt == 1);
+		Moves mvs;
+		if( bt ) {
+			bd.negaMax1(mvs, nn, d1, d2);
+			if( !mvs.empty() )
+				bd.b_move(mvs);
+		} else {
+			HGBoard b2(bd.m_white, bd.m_black);		//	白黒反転
+			b2.negaMax1(mvs, nn, d1, d2);
+			if( !mvs.empty() )
+				bd.w_move(mvs);
+		}
+		cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+		for(auto mv: mvs) cout << mv.text() << " ";
+		cout << "\n";
+		cout << bd.text() << "\n";
+	}
 }

@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+//class HGNNet;
+
 #define	 HG_N_POINT		 12
 #define	 HG_ARY_SIZE		(HG_N_POINT+2)	 //  +2 for スタート、ゴール
 #define	 HG_BOARD_SIZE	  HG_ARY_SIZE*2
@@ -13,6 +15,8 @@
 
 #define		HG_NN_INSIZE		(HG_N_POINT*2*4+2+2)
 #define		HG_NN_HIDSIZE		40
+//#define		HG_NN_HIDSIZE		60
+//#define		HG_NN_HIDSIZE		80
 
 static inline int hg_revIX(int x) { return HG_START_IX - x; }
 
@@ -61,6 +65,7 @@ public:
 	double	w_expScoreRPO(int N_GAME = 100) const;			//	ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば白有利
 	void	setInput(std::vector<double>&) const;
 	void	setInputNmlz(std::vector<double>&) const;				//	平均０、分散１に変換
+	void	negaMax1(Moves&, class HGNNet&, int, int) const;					//	黒番・１手先読み・HGNNet による得点期待値により最適手取得
 public:
 	void	init();
 	void	clear();

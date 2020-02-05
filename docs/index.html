@@ -14,7 +14,7 @@
 <h2>概要</h2>
 <p>「HGNN - HalfGammon Neural Network -」は、人工ニューラルネット（ANN）を使用し、ハーフギャモンの状態から得点期待値を予測する</p>
 <ul>
-	<li>「人工ニューラルネット（Artificial Neural Network）」は、生物の脳細胞を簡略化したニューロンをネットワーク化したもの</li>
+	<li>「人工ニューラルネット（Artificial Neural Network）」は、生物の脳細胞（ニューロン）を簡略化しネットワーク化したもの</li>
 	<li>「<a href="http://vivi.dyndns.org/games/HalfGammon/">ハーフギャモン</a>」とは、
 	通常の<a href="https://ja.wikipedia.org/wiki/%E3%83%90%E3%83%83%E3%82%AF%E3%82%AE%E3%83%A3%E3%83%A2%E3%83%B3">バックギャモン</a>
 	の盤面サイズ・石数・ダイスの目を（ほぼ）半分にしたボードゲーム</li>
@@ -128,6 +128,7 @@ double linearRMS(HGNNet&amp; nn, int N_LOOP = 100)
 void test_linearFunc()
 {
     HGNNet nn;
+    cout &lt;&lt; "f(x1, x2) = 3*x1 - 2*x2 + 1\n";
     cout &lt;&lt; "# node of layers: {2 1}\n\n";
     nn.init(vector&lt;int&gt;{2}, SIGMOID);    // ２入力のみ（隠れ層無し）
     vector&lt;double&gt; input(2);
@@ -140,13 +141,25 @@ void test_linearFunc()
         nn.train(input, linearFunc(input[0], input[1]));
         if( log10(cnt) == (int)log10(cnt) )
         {
-            cout &lt;&lt; "10^" &lt;&lt; log10(cnt) &lt;&lt; "\t" &lt;&lt; linearRMS(nn) &lt;&lt; endl;
+            cout &lt;&lt; "10^" &lt;&lt; log10(cnt) &lt;&lt; "\t" &lt;&lt; linearRMS(nn) &lt;&lt; "\t" &lt;&lt; nn.dumpWeight(false);
         }
     }
     cout &lt;&lt; "\n" &lt;&lt; nn.dump() &lt;&lt; "\n";
 }
 </pre>
+<p>実行結果：</p>
+<pre class="prettyprint">
+f(x1, x2) = 3*x1 - 2*x2 + 1
+# node of layers: {2 1}
 
+N       RMS
+------- ----------
+10^0    1.52533 wt: ( 0.642394 0.085492 0.804981 )
+10^1    1.69779 wt: ( 0.714407 0.060035 0.791912 )
+10^2    1.51351 wt: ( 1.258871 -0.458202 0.875337 )
+10^3    0.0734402       wt: ( 2.909116 -1.912322 1.008672 )
+10^4    1.23077e-14     wt: ( 3.000000 -2.000000 1.000000 )
+</pre>
 
 <h3 id="sinFunc">sin関数</h3>
 <p></p>

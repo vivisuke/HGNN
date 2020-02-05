@@ -57,6 +57,7 @@ public:
 public:
 	bool operator==(const HGNNet&) const;
 	std::string	dump() const;
+	std::string	dumpWeight(bool = true) const;		//	重み係数のみ
 	std::string	dumpPredict(const std::vector<data_t>& input);		//	for Test、
 	std::string	dumpBP() const;		//	for Test、バックプロパゲーションのための誤差・微分値を表示
 	bool	save(cchar*) const;		//	指定ファイルにネットワークの状態を保存

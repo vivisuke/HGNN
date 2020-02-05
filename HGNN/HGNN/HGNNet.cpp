@@ -295,6 +295,32 @@ bool HGNNet::operator==(const HGNNet& nn) const
 	}
 	return true;
 }
+std::string HGNNet::dumpWeight(bool highPrec) const		//	èdÇ›åWêîÇÃÇ›
+{
+	string txt;
+	//stringstream ss;
+	char buf[30];		//	for double text
+	//string buf;	buf.resize(30);		//	for double text
+	for (const auto& layer : m_layers) {
+		txt += "wt: ";
+		for (const auto& node : layer) {
+			txt += "( ";
+			for (auto w : node.m_weight) {
+				//txt += to_string(w) + " ";
+				//ss << w;
+				//txt += ss.str() + " ";
+				if( highPrec ) {
+					sprintf_s(buf, "%.17g", w);
+					txt += string(buf) + " ";
+				} else
+					txt += to_string(w) + " ";
+			}
+			txt += ") ";
+		}
+		txt += "\n";
+	}
+	return txt;
+}
 std::string HGNNet::dump() const
 {
 	string txt = "#node of layers: ";
@@ -309,24 +335,7 @@ std::string HGNNet::dump() const
 	case RELU:	txt += "RELU";	break;
 	}
 	txt += "\n";
-	//stringstream ss;
-	char buf[30];		//	for double text
-	for (const auto& layer : m_layers) {
-		txt += "wt: ";
-		for (const auto& node : layer) {
-			txt += "( ";
-			for (auto w : node.m_weight) {
-				//txt += to_string(w) + " ";
-				//ss << w;
-				//txt += ss.str() + " ";
-				sprintf_s(buf, "%.17g", w);
-				txt += buf;
-				txt += " ";
-			}
-			txt += ") ";
-		}
-		txt += "\n";
-	}
+	txt += dumpWeight();
 	return txt;
 }
 void HGNNet::makeWeightSeq()			//	åWêîÇ 0.1, 0.2, ... Ç…ê›íËÅAfor Test

@@ -163,12 +163,12 @@ data_t HGNNet::predict(const std::vector<data_t>& input)			//	予測
 		return m_layers.back()[0].m_output;
 }
 //	学習、第１引数：入力値、第２引数：教師値
-void HGNNet::learn(const std::vector<data_t>& input, data_t t, double alpha)
+data_t HGNNet::learn(const std::vector<data_t>& input, data_t t, double alpha)
 {
 	const double ETA = 0.9;
 	if( alpha > 0 ) m_alpha = alpha;
 #if	1
-	calcError(input, t);
+	auto err2 = calcError(input, t);
 	for (int l = m_layers.size(); --l >= 0;) {		//	全レイヤーについて
 		HGNNLayer& layer = m_layers[l];
 		for (int n = 0; n != layer.size(); ++n) {
@@ -249,10 +249,12 @@ void HGNNet::learn(const std::vector<data_t>& input, data_t t, double alpha)
 		}
 	}
 #endif
+	return err2;
 }
 //	誤差逆伝搬計算のみ for Test
-void HGNNet::calcError(const std::vector<data_t>& input, data_t t)
+data_t HGNNet::calcError(const std::vector<data_t>& input, data_t t)
 {
+	data_t err2 = 0;
 	for (auto& layer : m_layers) {
 		for (auto& node : layer)
 			node.m_err = 0;			//	すべての誤差をいったんクリア
@@ -271,6 +273,7 @@ void HGNNet::calcError(const std::vector<data_t>& input, data_t t)
 				else
 					node.m_err = y - t;			//	∂L/∂y、L = (y-t)^2/2
 				assert( abs(node.m_err) < 1e12 );
+				err2 = node.m_err * node.m_err / 2;
 			}
 			if (l > 0) {		//	前段が隠れ層の場合
 				auto& prevLayer = m_layers[l - 1];
@@ -297,6 +300,7 @@ void HGNNet::calcError(const std::vector<data_t>& input, data_t t)
 			//node.m_weight.back() -= m_alpha * node.m_err;	//	for バイアス
 		}
 	}
+	return err2;
 }
 bool HGNNet::operator==(const HGNNet& nn) const
 {

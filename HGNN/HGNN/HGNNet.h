@@ -72,10 +72,10 @@ public:
 	//	—\‘ª
 	data_t	predict(const std::vector<data_t>& input);
 	//	ŠwKA‘æ‚Pˆø”F“ü—Í’lA‘æ‚Qˆø”F‹³t’l
-	void	learn(const std::vector<data_t>& input, data_t t, double alpha = -1);
-	void	train(const std::vector<data_t>& input, data_t t, double alpha = -1) { learn(input, t, alpha); }		//	ƒGƒCƒŠƒAƒX
+	data_t	learn(const std::vector<data_t>& input, data_t t, double alpha = -1);
+	data_t	train(const std::vector<data_t>& input, data_t t, double alpha = -1) { return learn(input, t, alpha); }		//	ƒGƒCƒŠƒAƒX
 	//	ŠwKA‘æ‚Pˆø”F“ü—Í’lA‘æ‚Qˆø”F‹³t’l
-	void	calcError(const std::vector<data_t>& input, data_t t);		//	Œë·‹t“`”ÀŒvZ‚Ì‚İ for Test
+	data_t	calcError(const std::vector<data_t>& input, data_t t);		//	Œë·‹t“`”ÀŒvZ‚Ì‚İ for Test
 	bool	load(cchar*);
 	//bool	save(cchar*);
 	void	makeWeightSeq();			//	ŒW”‚ğ 0.1, 0.2, ... ‚Éİ’èAfor Test

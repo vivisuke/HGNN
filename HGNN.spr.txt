@@ -103,7 +103,11 @@
 ◎ C 02/05 02/05 0.001 ToDo test_negaMax1_random()：negaMax1 対 ランダム
 ◎ C 02/05 02/05 0.001 ToDo negaMax1() によるプレイアウトでの学習データ生成を可能に
 ◎ C 02/05 02/05 0.001 ToDo NNプレイアウト学習データで学習
-● C 02/05             ToDo 
-● C 02/05             ToDo 
-● C 02/05             ToDo 
-● C 02/05             ToDo 
+● C 02/06             ToDo 人間と対戦可能に？
+◎ C 02/07 02/07 0.001 ToDo Momentum SGD
+● C 02/07             ToDo 
+● C 02/07             ToDo 
+● C 02/07             ToDo 
+● C 02/07             ToDo 
+● C 02/07             ToDo 
+● C 02/07             ToDo 

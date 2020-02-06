@@ -44,6 +44,7 @@ struct HGNNNode {
 	data_t	m_diff;			//	活性化関数微分値、actFunc'(m_sum)
 	data_t	m_err;			//	誤差 for バックプロパゲーション = ∑m_diff*後段誤差*後段重み係数
 	std::vector<data_t>	m_weight;		//	前段との重み係数、最後の要素はバイアス用
+	std::vector<data_t>	m_wtDiff;		//	重み係数差分
 };
 
 typedef std::vector<HGNNNode> HGNNLayer;
@@ -80,6 +81,7 @@ public:
 	void	makeWeightSeq();			//	係数を 0.1, 0.2, ... に設定、for Test
 public:
 	bool			m_batchNrmlz;		//	バッチ・ノーマライゼーション
+	bool			m_optSGD;			//	勾配降下法最適化
 	uint8			m_outputType;		//	回帰/tanh
 	int			m_nInput;				//	入力レイヤーのノード数
 	double		m_alpha;				//	学習係数、範囲：[0, 1]

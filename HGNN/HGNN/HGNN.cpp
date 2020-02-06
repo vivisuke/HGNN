@@ -82,7 +82,7 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	//test_learnNNPO(true);
+	test_learnNNPO(true);
 	//test_learnRPO(false);
 	//test_learnRPO10();
 	//test_ReLU();
@@ -96,7 +96,7 @@ int main()
 	//test_negaMax1();
 	//test_negaMax1_prime();
 	//test_negaMax1_random();
-	test_negaMax1_random_stat(1000);
+	//test_negaMax1_random_stat(1000);
 	//
 	//test_OTGBoard();
 	//HGBoard bd;
@@ -448,6 +448,7 @@ void test_learnNNPO(bool verbose)
 	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH);
 #endif
 #endif
+	nn.m_optSGD = true;
 	vector<double> input(HG_NN_INSIZE);
 	bd.setInputNmlz(input);
 	auto sc = nn.predict(input);
@@ -915,6 +916,7 @@ void test_linearFunc()
 	cout << "f(x1, x2) = 3*x1 - 2*x2 + 1\n";
 	cout << "# node of layers: {2 1}\n\n";
 	nn.init(vector<int>{2}, SIGMOID, 0.01);		//	２入力のみ（隠れ層無し）、活性化関数は無視される
+	nn.m_optSGD = true;
 	vector<double> input(2);
 	//	学習・評価
 	cout << "N\tRMS\n";

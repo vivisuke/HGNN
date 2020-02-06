@@ -58,6 +58,7 @@ void HGNNet::init(const std::vector<int>& lst, ActFunc actFunc, double alpha)
 	if (lst.empty()) {
 		return;
 	}
+	m_optSGD = false;
 	m_batchNrmlz = true;
 	m_outputType = OT_REGRESSION;
 	m_actFunc = actFunc;
@@ -71,17 +72,23 @@ void HGNNet::init(const std::vector<int>& lst, ActFunc actFunc, double alpha)
 		for (int n = 0; n != lst[l]; ++n) {
 			layer[n].m_weight.resize(lst[l - 1] + 1);		//	+1 for バイアス
 			for (auto& w : layer[n].m_weight) w = g_rand11(g_mt);		//	係数 [-1, +1] 乱数初期化
+			layer[n].m_wtDiff.resize(lst[l - 1] + 1);		//	+1 for バイアス
+			for (auto& w : layer[n].m_wtDiff) w = 0;		//	
 		}
 	}
 	//	出力層初期化
 	int l = lst.size() - 1;
 	auto& layer = m_layers[l];		//	
 	layer.resize(1);
-	if (l != 0)	//	隠れ層がある場合
+	if (l != 0) {	//	隠れ層がある場合
 		layer[0].m_weight.resize(lst[l] + 1);		//	+1 for バイアス
-	else			//	隠れ層が無い場合
+		layer[0].m_wtDiff.resize(lst[l] + 1);		//	+1 for バイアス
+	} else {			//	隠れ層が無い場合
 		layer[0].m_weight.resize(lst[0] + 1);		//	+1 for バイアス
+		layer[0].m_wtDiff.resize(lst[0] + 1);		//	+1 for バイアス
+	}
 	for (auto& w : layer[0].m_weight) w = g_rand11(g_mt);		//	係数 [-1, +1] 乱数初期化
+	for (auto& w : layer[0].m_wtDiff) w = 0;
 }
 //	入力 → 回帰予測
 data_t HGNNet::predict(const std::vector<data_t>& input)			//	予測
@@ -158,6 +165,7 @@ data_t HGNNet::predict(const std::vector<data_t>& input)			//	予測
 //	学習、第１引数：入力値、第２引数：教師値
 void HGNNet::learn(const std::vector<data_t>& input, data_t t, double alpha)
 {
+	const double ETA = 0.9;
 	if( alpha > 0 ) m_alpha = alpha;
 #if	1
 	calcError(input, t);
@@ -169,18 +177,30 @@ void HGNNet::learn(const std::vector<data_t>& input, data_t t, double alpha)
 				auto& prevLayer = m_layers[l - 1];
 				for (int k = 0; k != prevLayer.size(); ++k) {		//	前段の全ノードについて
 					auto& prevNode = prevLayer[k];
-					node.m_weight[k] -= m_alpha * node.m_err * prevLayer[k].m_output;	//	重み修正
+					if( m_optSGD ) {
+						auto t = node.m_wtDiff[k] * ETA;
+						node.m_weight[k] -= t + (node.m_wtDiff[k] = m_alpha * node.m_err * prevLayer[k].m_output);	//	重み修正
+					} else
+						node.m_weight[k] -= m_alpha * node.m_err * prevLayer[k].m_output;	//	重み修正
 					assert( !isnan(node.m_weight[k]) );
 					assert( abs(node.m_weight[k]) < 1e12 );
 				}
 			} else {			//	前段が入力層の場合
 				for (int k = 0; k != node.m_weight.size() - 1; ++k) {		//	-重み係数配列の最後はバイアス用のために -1
-					node.m_weight[k] -= m_alpha * node.m_err * input[k];
+					if( m_optSGD ) {
+						auto t = node.m_wtDiff[k] * ETA;
+						node.m_weight[k] -= t + (node.m_wtDiff[k] = m_alpha * node.m_err * input[k]);	//	重み修正
+					} else
+						node.m_weight[k] -= m_alpha * node.m_err * input[k];
 					assert( !isnan(node.m_weight[k]) );
 					assert( abs(node.m_weight[k]) < 1e12 );
 				}
 			}
-			node.m_weight.back() -= m_alpha * node.m_err;	//	for バイアス
+			if( m_optSGD ) {
+				auto t = node.m_wtDiff.back() * ETA;
+				node.m_weight.back() -= t + (node.m_wtDiff.back() = m_alpha * node.m_err);	//	重み修正
+			} else
+				node.m_weight.back() -= m_alpha * node.m_err;	//	for バイアス
 			assert( !isnan(node.m_weight.back()) );
 			assert( abs(node.m_weight.back()) < 1e12 );
 		}

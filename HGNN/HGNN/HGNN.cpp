@@ -82,7 +82,7 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	test_learnNNPO(true);
+	test_learnNNPO(false);
 	//test_learnRPO(false);
 	//test_learnRPO10();
 	//test_ReLU();
@@ -383,10 +383,10 @@ void test_ReLU()
 		cout << "RMS = " << calcRMS_RPO(nn, 10) << endl;
 	}
 }
-double calcRMS_NNPO(HGNNet& nn, int N_GAME = 10)
+double calcRMS_NNPO(HGNNet& nn, int N_GAME = 20)
 {
 	HGBoard bd;
-	const int N_PO = 10;
+	const int N_PO = 50;
 	int nt = 0;		//	テスト数
 	double sum2 = 0;
 	vector<double> input(HG_NN_INSIZE);
@@ -448,7 +448,7 @@ void test_learnNNPO(bool verbose)
 	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH);
 #endif
 #endif
-	nn.m_optSGD = true;
+	//nn.m_optSGD = true;
 	vector<double> input(HG_NN_INSIZE);
 	bd.setInputNmlz(input);
 	auto sc = nn.predict(input);
@@ -471,6 +471,7 @@ void test_learnNNPO(bool verbose)
 		return;
 	}
 	for (int i = 0; i < 10; ++i) {
+		double sum2 = 0;
 		if( !verbose ) cout << "*";
 		std::shuffle(data.begin(), data.end(), g_mt);
 		for(const auto& di: data) {
@@ -478,17 +479,19 @@ void test_learnNNPO(bool verbose)
 				bd.set(di.m_ktext);
 				//bd.setInput(input);
 				bd.setInputNmlz(input);
-				nn.learn(input, di.m_score, ALPHA);
+				sum2 += nn.learn(input, di.m_score, ALPHA);
 			} else {
 				bd.set(di.m_ktext);
 				bd.swapBW();
 				//bd.setInput(input);
 				bd.setInputNmlz(input);
-				nn.learn(input, di.m_score, ALPHA);
+				sum2 += nn.learn(input, di.m_score, ALPHA);
 			}
 		}
 		if( verbose )
 			cout << "RMS = " << calcRMS_NNPO(nn) << endl;
+		else
+			cout << "RMS = " << sqrt(sum2/data.size()) << endl;
 	}
 	if( !verbose )
 		cout << "RMS = " << calcRMS_NNPO(nn) << endl;

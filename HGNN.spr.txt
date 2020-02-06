@@ -106,8 +106,8 @@
 ● C 02/06             ToDo 人間と対戦可能に？
 ◎ C 02/07 02/07 0.001 ToDo Momentum SGD
 ◎ C 02/07 02/07 0.001 ToDo 学習関数：誤差を返すように
-● C 02/07             ToDo 
-● C 02/07             ToDo 
+◎ C 02/07 02/07 0.001 ToDo test_learnNNPO()：学習関数が返す誤差を表示
+● C 02/07             ToDo NN 学習データと NNPO の平方平均自乗誤差計算
 ● C 02/07             ToDo 
 ● C 02/07             ToDo 
 ● C 02/07             ToDo 

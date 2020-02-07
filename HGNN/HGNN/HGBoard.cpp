@@ -18,8 +18,14 @@ HGBoard::HGBoard()
 	init();
 }
 //---------------------------------------------------
-string Move::text() const {
-	string txt = to_string((int)m_src) + "/" + to_string((int)m_src - m_d);
+string Move::text(bool black) const {
+	string txt;
+	int src = m_src, dst = m_src - m_d;
+	if( !black) {
+		src = hg_revIX(src);
+		dst = hg_revIX(dst);
+	}
+	txt = to_string(src) + "/" + to_string(dst);
 	if (m_hit) txt += '*';
 	return txt;
 }
@@ -68,8 +74,15 @@ void HGBoard::swapBW()
 }
 void HGBoard::set(const std::string& ktext)
 {
+#if	1
+	int ix = 0;
+	for(auto& x: ktext)
+		if( isdigit(x) )
+			m_board[ix++] = x - '0';
+#else
 	m_board = ktext;
 	for(auto& x: m_board) x -= '0';
+#endif
 	updateNumBW();
 }
 void	HGBoard::updateNumBW()				//	”’•Î”ÄŒvŽZ
@@ -222,7 +235,7 @@ void HGBoard::b_genMoves(Moves& mvs, int d) const
 					mvs.push_back(Move(ix, d));
 				} else if (ix > d && m_white[rx = hg_revIX(ix-d)] < 2 ) {
 					mvs.push_back(Move(ix, d, m_white[rx] == 1));
-				} else if (tail)
+				} else if (tail && d >= ix )
 					mvs.push_back(Move(ix, ix));
 			}
 		}

@@ -31,7 +31,7 @@ public:
 	{
 	}
 public:
-	std::string text() const;
+	std::string text(bool=true) const;
 public:
 	char	m_src;	  //  移動元
 	char	m_d;		//  移動距離
@@ -65,8 +65,8 @@ public:
 	double	w_expctScoreRPO(int N_GAME = 100) const;			//	ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば白有利
 	void	setInput(std::vector<double>&) const;
 	void	setInputNmlz(std::vector<double>&) const;				//	平均０、分散１に変換
-	double	b_expctScoreNNPO(class HGNNet&, int N_GAME) const;					//	黒番 NNモンテカルロ法スコア期待値
-	double	w_expctScoreNNPO(class HGNNet&, int N_GAME) const;				//	白番 NNモンテカルロ法スコア期待値
+	double	b_expctScoreNNPO(class HGNNet&, int N_GAME) const;					//	黒番 NNモンテカルロ法スコア期待値、プラスなら黒番有利
+	double	w_expctScoreNNPO(class HGNNet&, int N_GAME) const;				//	白番 NNモンテカルロ法スコア期待値、プラスなら白番有利
 	double	b_expctScore(class HGNNet&) const;					//	黒番 スコア期待値
 	double	w_expctScore(class HGNNet&) const;					//	白番 スコア期待値
 	void	negaMax1(Moves&, class HGNNet&, int, int) const;					//	黒番・１手先読み・HGNNet による得点期待値により最適手取得

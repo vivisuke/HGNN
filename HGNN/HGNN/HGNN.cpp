@@ -66,7 +66,7 @@ void test_OTGBoard();
 
 int main()
 {
-	test_genMoves();
+	//test_genMoves();
 	//test_randomPlayOut();
 	//test_expctScoreRPO();
 	//test_expctScoreRPO2();
@@ -83,9 +83,9 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	//test_learnNNPO(false);
-	//test_learnRPO(false);
+	test_learnRPO(false);
 	//test_learnRPO10();
+	//test_learnNNPO(false);
 	//test_ReLU();
 	//test_ReLU2();
 	//test_load_save();
@@ -538,6 +538,82 @@ void test_learnRPO(bool verbose)
 	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH);
 #endif
 #endif
+	//nn.m_optSGD = true;
+	vector<double> input(HG_NN_INSIZE);
+	bd.setInputNmlz(input);
+	auto sc = nn.predict(input);
+	if( verbose )
+		cout << "RMS = " << calcRMS_RPO(nn) << endl;
+	//
+	vector<DataItem> data;
+	char buf[64];
+	for (int i = 1; i <= 10; ++i) {
+		sprintf_s(buf, "data/RPO100-%03d.txt", i);
+		readData(data, buf);
+	}
+	if( data.empty() ) {
+		cout << "can't open data file.\n";
+		return;
+	}
+	for (int i = 0; i < 10; ++i) {
+		double sum2 = 0;
+		if( !verbose ) cout << "*";
+		std::shuffle(data.begin(), data.end(), g_mt);
+		for(const auto& di: data) {
+			if( di.m_bturn ) {
+				bd.set(di.m_ktext);
+				//bd.setInput(input);
+				bd.setInputNmlz(input);
+				sum2 += nn.learn(input, di.m_score, ALPHA);
+			} else {
+				bd.set(di.m_ktext);
+				bd.swapBW();
+				//bd.setInput(input);
+				bd.setInputNmlz(input);
+				sum2 += nn.learn(input, di.m_score, ALPHA);
+			}
+		}
+		if( verbose )
+			cout << "RMS = " << calcRMS_RPO(nn) << endl;
+		else
+			cout << "RMS = " << sqrt(sum2/data.size()) << endl;
+	}
+	if( !verbose )
+		cout << "RMS = " << calcRMS_RPO(nn) << endl;
+	nn.save("nn/RPO100x10-001.txt");
+}
+#if	0
+void test_learnRPO(bool verbose)
+{
+	const bool batchNrmlz = true;
+	HGBoard bd;
+	//
+	HGNNet nn;
+#if	0
+	double ALPHA = 0.001;
+#if	0
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE}, RELU);
+#elif 1
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, RELU);
+#else
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, ReLU\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, RELU);
+#endif
+#else
+	double ALPHA = 0.01;
+#if	0
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE}, TANH);
+#elif 1
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH, batchNrmlz);
+#else
+	cout << "# nodes of layers: {" << HG_NN_INSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " " << HG_NN_HIDSIZE << " 1}, tanh\n\n";
+	nn.init(vector<int>{HG_NN_INSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE, HG_NN_HIDSIZE}, TANH);
+#endif
+#endif
 	vector<double> input(HG_NN_INSIZE);
 	bd.setInputNmlz(input);
 	auto sc = nn.predict(input);
@@ -583,6 +659,7 @@ void test_learnRPO(bool verbose)
 		cout << "RMS = " << calcRMS_RPO(nn) << endl;
 	nn.save("RPO1000x10.txt");
 }
+#endif
 void test_readData()
 {
 #ifdef _DEBUG
@@ -1019,7 +1096,7 @@ void otg_genDataRPO()
 	OTGBoard bd;
 	int d1, d2;
 	Moves mvs;
-	for (int g = 1; g <= 100; ++g) {
+	for (int g = 1; g <= 1000; ++g) {
 		cout << "#" << g << endl;
 		bd.init();
 		//cout << bd.text() << endl;
@@ -1047,6 +1124,7 @@ void otg_genDataRPO()
 //	ランダムプレイアウトにより 状態 → 期待スコア学習データ生成
 void genDataRPO()
 {
+	ofstream ofs("data/RPO100-010.txt");
 #ifdef _DEBUG
 	const int N_GAME = 100;
 #else
@@ -1055,16 +1133,19 @@ void genDataRPO()
 	HGBoard bd;
 	for (int g = 1; g <= 100; ++g) {
 		cout << "# " << g << endl;
+		ofs << "# " << g << endl;
 		bd.init();
 		//cout << bd.text() << endl;
 		bool bt = true;
 		for (int cnt = 1;; ++cnt, bt = !bt) {
 			if( cnt != 1 ) {
 				if( bt ) {
-					cout << "b " << bd.ktext() << " " << bd.b_expctScoreRPO(N_GAME) << endl;
+					//cout << "b " << bd.ktext() << " " << bd.b_expctScoreRPO(N_GAME) << endl;
+					ofs << "b " << bd.ktext() << " " << bd.b_expctScoreRPO(N_GAME) << endl;
 					//cout << "black turn exp score = " << bd.b_expctScoreRPO(N_GAME) << endl << endl;
 				} else {
-					cout << "w " << bd.ktext() << " " << bd.w_expctScoreRPO(N_GAME) << endl;
+					//cout << "w " << bd.ktext() << " " << bd.w_expctScoreRPO(N_GAME) << endl;
+					ofs << "w " << bd.ktext() << " " << bd.w_expctScoreRPO(N_GAME) << endl;
 					//cout << "white turn exp score = " << bd.w_expctScoreRPO(N_GAME) << endl << endl;
 				}
 			}
@@ -1090,13 +1171,14 @@ void genDataRPO()
 					bd.w_move(mvs);
 				}
 			}
-			//for (const auto& mv : mvs) cout << mv.text() << " ";
+			//for (const auto& mv : mvs) cout << mv.text(bt) << " ";
 			//cout << "\n";
 			//cout << bd.text();
 			//cout << bd.ktext() << endl;
 			if (bd.result() != 0) break;
 		}
 	}
+	ofs.close();
 }
 //	学習済みプレイアウトにより 状態 → 期待スコア学習データ生成
 void genDataNN()

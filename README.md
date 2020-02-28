@@ -20,4 +20,4 @@ docs/index.html 参照
 
 # スポンサー
 本プロジェクトは下記スポンサー様のご支援を受けています。ありがとうございます。
-- 古賀製作所 様 （ https://www.facebook.com/kogasw.saga/ ）
+- （有）古賀製作所 様 （ https://www.facebook.com/kogasw.saga/ ）

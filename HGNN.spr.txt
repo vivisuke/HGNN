@@ -133,8 +133,9 @@
 							4/2 2/0 2/0 2/0
 ◎ C 02/08 02/08 0.001 ToDo HGBoard::set(ktext)：引数に数字以外がある場合は無視
 ◎ C 02/08 02/08 0.001 ToDo RPO学習データ再生成
-● C 02/08             ToDo 
-● C 02/08             ToDo 
-● C 02/08             ToDo 
-● C 02/08             ToDo 
-● C 02/08             ToDo 
+◎ C 02/28 02/28 0.001 ToDo b_expctScoreRPOMT() マルチスレッド版、５スレッド？
+◎ C 02/28 02/28 0.001 ToDo b_expctScoreRPOMT()、b_expctScoreRPO() 速度比較
+◎ C 02/28 02/28 0.001 問題 s_set_board がグローバルなので、マルチスレッドに対応していない
+● C 02/28             ToDo 
+● C 02/28             ToDo 
+● C 02/28             ToDo 

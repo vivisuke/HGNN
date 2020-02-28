@@ -110,8 +110,13 @@ using namespace std;
 <h2 id="example">HGNN 使用例</h2>
 
 <h3 id="linearFunc">線形関数</h3>
-<p>「y = 3*x1 - 2*x2 + 1」、２層NN</p>
+<p>２引数線形関数「y = 3*x1 - 2*x2 + 1」を２層NN（隠れ層無し）で学習。</p>
+<p>引数は [-1, +1] の範囲とし、その範囲のランダムな値で学習を行っている（これを「確率的勾配降下法」と呼ぶ）。</p>
 <pre class="prettyprint">
+#include "HGNNet.h"
+#include "utile.h"
+#include &lt;vector&gt;
+using namespace std;
 data_t linearFunc(data_t x1, data_t x2) { return x1*3 - x2*2 + 1; }
 double linearRMS(HGNNet&amp; nn, int N_LOOP = 100)
 {
@@ -146,8 +151,14 @@ void test_linearFunc()
     }
     cout &lt;&lt; "\n" &lt;&lt; nn.dump() &lt;&lt; "\n";
 }
+void main()
+{
+    test_linearFunc();
+}
 </pre>
-<p>実行結果：</p>
+<p>実行結果は下図の通り。数千回の学習で重み係数が正しい値に収束している。
+<br>このような単純な場合でも数千回もの学習が必要なのは非効率と思われるかもしれないが（実際、筆者も最初はそう思った）、
+２引数の範囲は [-1, +1] なので、それぞれの変数について10箇所で学習するとしても、100回になるので、数千回というのは極端に多い学習回数ではないと考えられる。</p>
 <pre class="prettyprint">
 f(x1, x2) = 3*x1 - 2*x2 + 1
 # node of layers: {2 1}
@@ -162,8 +173,75 @@ N       RMS
 </pre>
 
 <h3 id="sinFunc">sin関数</h3>
-<p></p>
+<p>ついで、「f(x) = sin(2πx)」（x: [-1, +1]）について学習してみる。</p>
+<p>sin(x) は非線形関数で、隠れ層の無いネットワークでは学習できないので、４層（隠れ層は２層）ネットワークとする。</p>
+<pre class="prettyprint">
+void test_sinFunc()
+{
+    cout << "f(x) = sin(2πx)\n";
+    HGNNet nn;
+    vector&lt;ActFunc&gt; lst = {SIGMOID, TANH, RELU};
+    for(auto af: lst) {
+        cout &lt;&lt; "# node of layers: {1 50 50 1}, ";
+        switch( af ) {
+        case SIGMOID:cout &lt;&lt; "SIGMOID:\n\n";  break;
+        case TANH:     cout &lt;&lt; "TANH:\n\n";break;
+        case RELU:      cout &lt;&lt; "RELU:\n\n";break;
+        }
+        cout &lt;&lt; "N\tRMS\n";
+        cout &lt;&lt; "------- ----------\n";
+        nn.init(vector&lt;int&gt;{1, 50, 50}, af);
+        vector&lt;double&gt; input(1);
+        // 学習
+        for (int cnt = 1; cnt &lt;= 100000; ++cnt) {
+            input[0] = g_rand11(g_mt);       // [-1, +1]
+            //double sc = nn.predict(input);     // for test
+            nn.train(input, sin(input[0]*2*PI));
+            //if( cnt == 10 || cnt == 100 || cnt == 1000 || cnt == 10000 || cnt == 100000 || cnt == 1000000 )
+            if( log10(cnt) == (int)log10(cnt) )
+            {
+                cout &lt;&lt; "10^" &lt;&lt; log10(cnt) &lt;&lt; "\t" &lt;&lt; sinRMS(nn) &lt;&lt; endl;
+            }
+        }
+        cout &lt;&lt; endl;
+    }
+}
+</pre>
+<pre class="prettyprint">
+f(x) = sin(2πx)
+# node of layers: {1 50 50 1}, SIGMOID:
 
+N       RMS
+------- ----------
+10^0    6.13175
+10^1    0.834752
+10^2    0.760938
+10^3    0.209733
+10^4    0.0620821
+10^5    0.012643
+
+# node of layers: {1 50 50 1}, TANH:
+
+N       RMS
+------- ----------
+10^0    3.36303
+10^1    1.53902
+10^2    0.19933
+10^3    0.0898708
+10^4    0.016077
+10^5    0.00503894
+
+# node of layers: {1 50 50 1}, RELU:
+
+N       RMS
+------- ----------
+10^0    8.0834
+10^1    4.85223
+10^2    0.517944
+10^3    0.157637
+10^4    0.0605106
+10^5    0.0105145
+</pre>
 
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 //class HGNNet;
 
@@ -31,6 +32,9 @@ public:
 	{
 	}
 public:
+	bool operator==(const Move& x) const {
+		return m_src == x.m_src && m_d == x.m_d && m_hit == x.m_hit;
+	}
 	std::string text(bool=true) const;
 public:
 	char	m_src;	  //  移動元
@@ -47,6 +51,7 @@ public:
 	HGBoard(const HGBoard&);
 	HGBoard(cchar* black, cchar* white);
 public:
+	HGBoard& operator=(const HGBoard&);
 	bool	operator==(const HGBoard&) const;
 	bool	operator!=(const HGBoard& x) const { return !operator==(x); }
 	std::string board() const { return m_board; }
@@ -58,18 +63,23 @@ public:
 	int	result() const;		//	{-1, 0, +1} を返す
 	int	resultSGB() const;		//	ギャモン・バックギャモン勝負を判定、{-3, -2, -1, 0, +1, +2, +3} を返す
 	void	b_genMoves(Moves&, int) const;
+	void	w_genMoves(Moves&, int) const;
 	void	b_genMovesListSeq(MovesList&, int, int) const;  //  d1 != d2, d1, d2 の順に使用
 	void	b_genMovesList(MovesList&, int, int) const;
 	void	w_genMovesList(MovesList&, int, int) const;
 	double	b_expctScoreRPO(int N_GAME = 100) const;			//	ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば黒有利
 	double	w_expctScoreRPO(int N_GAME = 100) const;			//	ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば白有利
+	double	b_expctScoreRPOMT(int N_GAME = 100) const;		//	マルチスレッド版、ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば黒有利
+	double	w_expctScoreRPOMT(int N_GAME = 100) const;		//	マルチスレッド版、ランダムプレイアウトによる得点期待値計算、リターン値がプラスならば白有利
 	void	setInput(std::vector<double>&) const;
 	void	setInputNmlz(std::vector<double>&) const;				//	平均０、分散１に変換
 	double	b_expctScoreNNPO(class HGNNet&, int N_GAME) const;					//	黒番 NNモンテカルロ法スコア期待値、プラスなら黒番有利
 	double	w_expctScoreNNPO(class HGNNet&, int N_GAME) const;				//	白番 NNモンテカルロ法スコア期待値、プラスなら白番有利
 	double	b_expctScore(class HGNNet&) const;					//	黒番 スコア期待値
 	double	w_expctScore(class HGNNet&) const;					//	白番 スコア期待値
-	void	negaMax1(Moves&, class HGNNet&, int, int) const;					//	黒番・１手先読み・HGNNet による得点期待値により最適手取得
+	double	negaMax1(Moves&, class HGNNet&, int, int) const;					//	黒番・１手先読み・HGNNet による得点期待値により最適手取得
+	double	negaMaxMC(Moves&, class HGNNet&, int, int, int = 10) const;					//	黒番・１手先読み・HGNNet モンテカルロ法期待値により最適手取得
+	double	negaMaxRMC(Moves&, class HGNNet&, int, int, int = 10) const;					//	黒番・１手先読み・ランダムモンテカルロ法期待値により最適手取得
 public:
 	void	init();
 	void	clear();
@@ -91,4 +101,5 @@ public:
 	int	 m_nBlack;
 	int	 m_nWhite;
 	std::string  m_board;		//  白黒石データ、size = HG_ARY_SIZE*2
+	mutable std::unordered_set<std::string> m_set_board;
 };

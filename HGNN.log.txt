@@ -1,0 +1,4 @@
+﻿■ 26-Feb-2020
+
+	○ NN予測値を使い、２手読み（１手＋加重平均ノード＋１手＋評価値）する negaMax2(Moves&, class HGNNet&, int, int) 実装・実験
+

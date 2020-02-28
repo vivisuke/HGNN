@@ -2,13 +2,14 @@
 #include <assert.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <thread>
 #include "utils.h"
 #include "HGBoard.h"
 #include "HGNNet.h"
 
 using namespace std;
 
-static unordered_set<string> s_set_board;
+//static unordered_set<string> s_set_board;
 
 HGBoard::HGBoard()
 {
@@ -48,6 +49,15 @@ HGBoard::HGBoard(cchar* black, cchar* white)
 		m_nBlack += (m_black[i] = black[i]);
 		m_nWhite += (m_white[i] = white[i]);
 	}
+}
+HGBoard& HGBoard::operator=(const HGBoard& x)
+{
+	m_board = x.m_board;
+	m_black = &m_board[0];
+	m_white = &m_board[HG_ARY_SIZE];
+	m_nBlack = x.m_nBlack;
+	m_nWhite = x.m_nWhite;
+	return *this;
 }
 bool HGBoard::operator==(const HGBoard& x) const {
 	return m_board == x.m_board;
@@ -160,6 +170,7 @@ std::string HGBoard::ktext() const
 {
 	string txt = m_board;
 	for(auto& x: txt) x += '0';
+	txt.insert(txt.begin()+HG_ARY_SIZE, ' ');
 	return txt;
 }
 string HGBoard::text() const
@@ -251,6 +262,11 @@ void HGBoard::b_genMoves(Moves& mvs, int d) const
 		}
 	}
 }
+void HGBoard::w_genMoves(Moves& mvs, int d) const
+{
+	HGBoard b2(m_white, m_black);
+	b2.b_genMoves(mvs, d);
+}
 void HGBoard::b_genMovesListSeq(MovesList& lst, int d1, int d2) const
 {
 	Moves mvs;
@@ -268,8 +284,8 @@ void HGBoard::b_genMovesListSeq(MovesList& lst, int d1, int d2) const
 			for (auto mv2 : mvs2) {
 				HGBoard b3(b2);
 				b3.b_move(mv2);
-				if (s_set_board.find(b3.m_board) == s_set_board.end()) {
-					s_set_board.insert(b3.m_board);
+				if (m_set_board.find(b3.m_board) == m_set_board.end()) {
+					m_set_board.insert(b3.m_board);
 					lst.push_back(Moves());
 					lst.back().push_back(mv);
 					lst.back().push_back(mv2);
@@ -280,7 +296,7 @@ void HGBoard::b_genMovesListSeq(MovesList& lst, int d1, int d2) const
 }
 void HGBoard::b_genMovesList(MovesList& lst, int d1, int d2) const
 {
-	s_set_board.clear();
+	m_set_board.clear();
 	lst.clear();
 	if (d1 != d2) {	//  ƒ]ƒ–Ú‚Å‚Í‚È‚¢ê‡
 		b_genMovesListSeq(lst, d1, d2);
@@ -295,8 +311,8 @@ void HGBoard::b_genMovesList(MovesList& lst, int d1, int d2) const
 			Moves mvs2;
 			b2.b_genMoves(mvs2, d1);
 			if (mvs2.empty()) {
-				if (s_set_board.find(b2.m_board) == s_set_board.end()) {
-					s_set_board.insert(b2.m_board);
+				if (m_set_board.find(b2.m_board) == m_set_board.end()) {
+					m_set_board.insert(b2.m_board);
 					lst.push_back(Moves());
 					lst.back().push_back(mv1);
 				}
@@ -308,8 +324,8 @@ void HGBoard::b_genMovesList(MovesList& lst, int d1, int d2) const
 					Moves mvs3;
 					b3.b_genMoves(mvs3, d1);
 					if (mvs3.empty()) {
-						if (s_set_board.find(b3.m_board) == s_set_board.end()) {
-							s_set_board.insert(b3.m_board);
+						if (m_set_board.find(b3.m_board) == m_set_board.end()) {
+							m_set_board.insert(b3.m_board);
 							lst.push_back(Moves());
 							lst.back().push_back(mv1);
 							lst.back().push_back(mv2);
@@ -322,8 +338,8 @@ void HGBoard::b_genMovesList(MovesList& lst, int d1, int d2) const
 							Moves mvs4;
 							b4.b_genMoves(mvs4, d1);
 							if (mvs4.empty()) {
-								if (s_set_board.find(b4.m_board) == s_set_board.end()) {
-									s_set_board.insert(b4.m_board);
+								if (m_set_board.find(b4.m_board) == m_set_board.end()) {
+									m_set_board.insert(b4.m_board);
 									lst.push_back(Moves());
 									lst.back().push_back(mv1);
 									lst.back().push_back(mv2);
@@ -334,8 +350,8 @@ void HGBoard::b_genMovesList(MovesList& lst, int d1, int d2) const
 								for (auto mv4 : mvs4) {
 									HGBoard b5(b4);
 									b5.b_move(mv4);
-									if (s_set_board.find(b5.m_board) == s_set_board.end()) {
-										s_set_board.insert(b5.m_board);
+									if (m_set_board.find(b5.m_board) == m_set_board.end()) {
+										m_set_board.insert(b5.m_board);
 										lst.push_back(Moves());
 										lst.back().push_back(mv1);
 										lst.back().push_back(mv2);
@@ -471,6 +487,51 @@ double HGBoard::w_expctScoreRPO(int N_GAME) const
 	HGBoard b2(m_white, m_black);
 	return b2.b_expctScoreRPO(N_GAME);
 }
+vector<double> g_sum;
+void b_expctScoreRPOMT_sub(HGBoard bd, int ix, int N_GAME)
+{
+	int sum = 0;
+	for (int i = 0; i < N_GAME; ++i) {
+		HGBoard b2(bd);
+		int resultSGB;
+		for(bool bt = true;; bt = !bt) {
+			MovesList lst;
+			int d1 = g_mt() % 3 + 1;
+			int d2 = g_mt() % 3 + 1;
+			if( bt ) {
+				b2.b_genMovesList(lst, d1, d2);
+				if( !lst.empty() )
+					b2.b_move(lst[g_mt() % lst.size()]);
+			} else {
+				b2.w_genMovesList(lst, d1, d2);
+				if( !lst.empty() )
+					b2.w_move(lst[g_mt() % lst.size()]);
+			}
+			if( (resultSGB = b2.resultSGB()) != 0 ) break;
+		}
+		sum += resultSGB;
+	}
+	g_sum[ix] = sum;
+}
+double HGBoard::b_expctScoreRPOMT(int N_GAME) const		//	ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh”ÅAƒ‰ƒ“ƒ_ƒ€ƒvƒŒƒCƒAƒEƒg‚É‚æ‚é“¾“_Šú‘Ò’lŒvZAƒŠƒ^[ƒ“’l‚ªƒvƒ‰ƒX‚È‚ç‚Î•—L—˜
+{
+	const int N_THREAD = 5;
+	g_sum.resize(N_THREAD);
+	for(auto& x: g_sum) x = 0;
+	vector<thread> tlst(N_THREAD);
+	int nsub = N_GAME / N_THREAD;
+	for (int ix = 0; ix < N_THREAD; ++ix) {
+		tlst[ix] = thread(b_expctScoreRPOMT_sub, *this, ix, nsub);
+	}
+	for(auto& th: tlst) th.join();
+	double sum = 0;
+	for(auto& x: g_sum) sum += x;
+	return sum / (nsub * N_THREAD);
+}
+double HGBoard::w_expctScoreRPOMT(int N_GAME) const		//	ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh”ÅAƒ‰ƒ“ƒ_ƒ€ƒvƒŒƒCƒAƒEƒg‚É‚æ‚é“¾“_Šú‘Ò’lŒvZAƒŠƒ^[ƒ“’l‚ªƒvƒ‰ƒX‚È‚ç‚Î”’—L—˜
+{
+	return 0;
+}
 void HGBoard::setInput(vector<double>& input) const
 {
 	input.resize(HG_NN_INSIZE);
@@ -537,19 +598,18 @@ double HGBoard::w_expctScore(class HGNNet& nn) const					//	”’”Ô ƒXƒRƒAŠú‘Ò’li”
 	return b2.b_expctScore(nn);
 }
 //	•”ÔE‚Pèæ“Ç‚İEHGNNet ‚É‚æ‚é“¾“_Šú‘Ò’l‚É‚æ‚èÅ“Kèæ“¾
-void HGBoard::negaMax1(Moves& mvs, class HGNNet& nn, int d1, int d2) const
+double HGBoard::negaMax1(Moves& mvs, class HGNNet& nn, int d1, int d2) const
 {
 	MovesList lst;
 	b_genMovesList(lst, d1, d2);
 	if( lst.empty() ) {
 		mvs.clear();
-		return;
+		return 0;
 	}
 	double mxev = -9999;
 	int mxi = 0;
 	vector<double> input;
-	int i = 0;
-	for (; i != lst.size(); ++i) {
+	for (int i = 0; i != lst.size(); ++i) {
 		HGBoard b2(*this);
 		b2.b_move(lst[i]);
 		b2.swapBW();
@@ -561,4 +621,69 @@ void HGBoard::negaMax1(Moves& mvs, class HGNNet& nn, int d1, int d2) const
 		}
 	}
 	mvs = lst[mxi];
+	return mxev;
+}
+//	•”ÔE‚Pèæ“Ç‚İEHGNNet ƒ‚ƒ“ƒeƒJƒ‹ƒ–@Šú‘Ò’l‚É‚æ‚èÅ“Kèæ“¾
+double HGBoard::negaMaxMC(Moves& mvs, class HGNNet& nn, int d1, int d2, int N_GAME) const
+{
+	MovesList lst;
+	b_genMovesList(lst, d1, d2);
+	if( lst.empty() ) {
+		mvs.clear();
+		return 0;
+	}
+	double mxev = -9999;
+	int mxi = 0;
+	for (int i = 0; i != lst.size(); ++i) {
+		HGBoard b2(*this);
+		b2.b_move(lst[i]);
+		b2.swapBW();
+		double ev = -w_expctScoreNNPO(nn, N_GAME);
+		if( ev > mxev ) {
+			mxev = ev;
+			mxi = i;
+		}
+	}
+	mvs = lst[mxi];
+	return mxev;
+}
+//	•”ÔE‚Pèæ“Ç‚İEƒ‰ƒ“ƒ_ƒ€ƒ‚ƒ“ƒeƒJƒ‹ƒ–@Šú‘Ò’l‚É‚æ‚èÅ“Kèæ“¾
+double HGBoard::negaMaxRMC(Moves& mvs, class HGNNet& nn, int d1, int d2, int N_GAME) const
+{
+	MovesList lst;
+	b_genMovesList(lst, d1, d2);
+	if( lst.empty() ) {
+		mvs.clear();
+		return 0;
+	}
+	vector<double> input;
+	vector<pair<double, int>> evlst;		//	•]‰¿’lEƒCƒ“ƒfƒbƒNƒX ƒŠƒXƒg
+	for (int i = 0; i != lst.size(); ++i) {
+		HGBoard b2(*this);
+		b2.b_move(lst[i]);
+		//for(auto mv: lst[i]) cout << mv.text() << " ";
+		//cout << "\n";
+		//cout << b2.text() << "\n";
+		b2.swapBW();
+		b2.setInput(input);
+		double ev = -nn.predict(input);
+		evlst.push_back(pair<double, int>(ev, i));
+	}
+	std::sort(evlst.begin(), evlst.end(),
+				[](auto const& lhs, auto const& rhs) { return lhs.first > rhs.first; });
+	double mxev = -9999;
+	const int limit = std::min(5, (int)lst.size());
+	int mxi = 0;
+	for (int i = 0; i != limit; ++i) {
+		HGBoard b2(*this);
+		b2.b_move(lst[evlst[i].second]);
+		b2.swapBW();
+		double ev = -w_expctScoreRPO(N_GAME);
+		if( ev > mxev ) {
+			mxev = ev;
+			mxi = i;
+		}
+	}
+	mvs = lst[mxi];
+	return mxev;
 }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <chrono>
 #include <assert.h>
 #include "utils.h"
 #include "HGNNet.h"
@@ -34,6 +35,7 @@ void test_genMoves();
 void test_randomPlayOut();
 void test_expctScoreRPO();
 void test_expctScoreRPO2();
+void test_expctScoreRPOMT();
 void test_readData();
 void test_linearFuncArg1();			//	y = 2*x - 1、x: [-1, +1]
 void test_linearFunc();			//	y = 3*x1 - 2*x2 + 1、x1,x2: [-1, +1]
@@ -61,6 +63,10 @@ void test_negaMax1_prime();			//	とある局面でのチェック
 void test_negaMax1_random();		//	negaMax1 対 ランダム
 void test_negaMax1_negaMax1();		//	negaMax1 対 negaMax1
 void test_negaMax1_random_stat(int N_GAME = 100);		//	negaMax1 対 ランダム 統計
+void test_negaMaxMC_random();		//	negaMaxMC 対 ランダム
+void test_negaMaxMC_random_stat(int N_GAME = 20);		//	negaMax1 対 ランダム 統計
+void test_negaMax1_human();
+void test_negaMaxRMC_random();		//	negaMaxRMC 対 ランダム
 
 void test_OTGBoard();
 
@@ -70,6 +76,7 @@ int main()
 	//test_randomPlayOut();
 	//test_expctScoreRPO();
 	//test_expctScoreRPO2();
+	test_expctScoreRPOMT();
 	//test_readData();
 	//test_HGNNet();
 	//test_linearFuncArg1();
@@ -83,7 +90,7 @@ int main()
 	//test_120201();
 	//test_12221();
 	//test_2argsFunc();
-	test_learnRPO(false);
+	//test_learnRPO(false);
 	//test_learnRPO10();
 	//test_learnNNPO(false);
 	//test_ReLU();
@@ -98,7 +105,11 @@ int main()
 	//test_negaMax1_prime();
 	//test_negaMax1_random();
 	//test_negaMax1_negaMax1();
+	//test_negaMax1_human();
 	//test_negaMax1_random_stat(1000);
+	//test_negaMaxMC_random();
+	//test_negaMaxMC_random_stat(100);
+	//test_negaMaxRMC_random();
 	//
 	//test_OTGBoard();
 	//HGBoard bd;
@@ -580,7 +591,7 @@ void test_learnRPO(bool verbose)
 	}
 	if( !verbose )
 		cout << "RMS = " << calcRMS_RPO(nn) << endl;
-	nn.save("nn/RPO100x10-001.txt");
+	nn.save("nn/RPO1000x10-001.txt");			//	千対局分の学習データを10周
 }
 #if	0
 void test_learnRPO(bool verbose)
@@ -1057,6 +1068,7 @@ void test_linearFuncAF()
 #endif
 void test_sinFunc()
 {
+	cout << "f(x) = sin(2πx)\n";
 	HGNNet nn;
 	vector<ActFunc> lst = {SIGMOID, TANH, RELU};
 	for(auto af: lst) {
@@ -1236,6 +1248,34 @@ void genDataNN()
 			//cout << bd.ktext() << endl;
 			if (bd.result() != 0) break;
 		}
+	}
+}
+void test_expctScoreRPOMT()
+{
+	HGBoard bd;
+	cout << bd.text() << endl;
+#ifdef _DEBUG
+	const int N_GAME = 200;
+#else
+	const int N_GAME = 5000;
+#endif
+	if( true) {
+		auto start = std::chrono::system_clock::now();      // 計測スタート時刻を保存
+		auto ev = bd.b_expctScoreRPO(N_GAME);
+		auto end = std::chrono::system_clock::now();       // 計測終了時刻を保存
+	    auto dur = end - start;        // 要した時間を計算
+	    auto msec = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+		cout << "b_expctScoreRPO(" << N_GAME << "): ev = " << ev << "\n";
+		cout << "dur = " << msec << "msec\n";
+	}
+	if( true) {
+		auto start = std::chrono::system_clock::now();      // 計測スタート時刻を保存
+		auto ev = bd.b_expctScoreRPOMT(N_GAME);
+		auto end = std::chrono::system_clock::now();       // 計測終了時刻を保存
+	    auto dur = end - start;        // 要した時間を計算
+	    auto msec = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+		cout << "b_expctScoreRPOMT(" << N_GAME << "): ev = " << ev << "\n";
+		cout << "dur = " << msec << "msec\n";
 	}
 }
 void test_expctScoreRPO2()
@@ -1426,9 +1466,9 @@ void test_negaMax1()
 void test_negaMax1_negaMax1()
 {
 	HGNNet nn1, nn2;
-	bool rc1 = nn1.load("RPO1000x10.txt");
+	bool rc1 = nn1.load("nn/RPO1000x10-001.txt");
 	assert( rc1 );
-	bool rc2 = nn2.load("RPO2000x10.txt");
+	bool rc2 = nn2.load("nn/RPO1000x10-001.txt");
 	assert( rc2 );
 	HGBoard bd;
 	cout << bd.text() << "\n";
@@ -1464,10 +1504,95 @@ void test_negaMax1_negaMax1()
 		cout << "\n";
 	}
 }
+void human(int cnt, HGBoard& bd, int d1, int d2)
+{
+	//cout << cnt << ") " << d1 << d2 << ":\n";
+	const bool same = d1 == d2;
+	int rest = same ? 4 : 2;
+	string buf;
+	for (;;) {
+		cout << cnt << ") ";
+		if( same ) {
+			for (int i = 0; i < rest; ++i) cout << d1;
+		} else {
+			cout << d1;
+			if( d2 != 0 ) cout << d2;
+		}
+		cout << "\n";
+		cin >> buf;
+		int src, dst;
+		if( sscanf_s(buf.c_str(), "%d/%d", &src, &dst) != 2 ||
+			src < 0 || src > 13 || dst < 0 || dst > 13 )
+		{
+			cout << "enter src/dst  (src, dst: [0, 13])\n";
+			continue;
+		}
+		if( bd.m_black[src] == 0 ) {
+			cout << "no black stone at " << src << ".\n";
+			continue;
+		}
+		int d = src - dst;
+		int rd = hg_revIX(dst);
+		if( d != d1 && d != d2 || bd.m_white[rd] >= 2 ) {
+			cout << "illegal move.\n";
+			continue;
+		}
+		Move mv(src, d, bd.m_white[rd] == 1);
+		bd.b_move(mv);
+		cout << bd.text() << "\n";
+		if( --rest == 0 ) return;
+		if( !same ) {
+			if( d == d1 )
+				d1 = d2;
+			d2 = 0;
+		}
+	}
+}
+void test_negaMax1_human()
+{
+	HGNNet nn;
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
+	assert( rc );
+	HGBoard bd;
+	cout << bd.text() << "\n";
+	bool bt = true;
+	for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+		int d1, d2;
+		do {
+			d1 = g_mt() % 3 + 1;
+			d2 = g_mt() % 3 + 1;
+		} while (d1 == d2 && cnt == 1);
+		Moves mvs;
+		if( bt ) {
+			MovesList lst;
+			bd.b_genMovesList(lst, d1, d2);
+			if (!lst.empty()) {
+				human(cnt, bd, d1, d2);
+			}
+		} else {
+			HGBoard b2(bd.m_white, bd.m_black);
+			b2.negaMax1(mvs, nn, d1, d2);
+			if( !mvs.empty() )
+				bd.w_move(mvs);
+			cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+			for(auto mv: mvs) cout << mv.text(bt) << " ";
+			cout << "\n";
+			cout << bd.text();	// << "\n";
+		}
+		if( bd.result() != 0 ) break;
+		if( !bt ) {
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n";
+		} else {
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n";
+		}
+		//cout << "\n";
+		cout << "\n";
+	}
+}
 void test_negaMax1_random()
 {
 	HGNNet nn;
-	bool rc = nn.load("RPO1000x10.txt");
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
 	assert( rc );
 	HGBoard bd;
 	cout << bd.text() << "\n";
@@ -1497,10 +1622,101 @@ void test_negaMax1_random()
 		cout << bd.text();	// << "\n";
 		if( bd.result() != 0 ) break;
 		if( !bt ) {
-			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n\n";
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n";
 		} else {
-			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n";
 		}
+		cout << "\n";
+		cout << "\n";
+	}
+}
+//	negaMaxRMC 対 ランダム
+void test_negaMaxRMC_random()
+{
+	HGNNet nn;
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
+	assert( rc );
+	HGBoard bd;
+	cout << bd.text() << "\n";
+	bool bt = true;
+	for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+		int d1, d2;
+		do {
+			d1 = g_mt() % 3 + 1;
+			d2 = g_mt() % 3 + 1;
+		} while (d1 == d2 && cnt == 1);
+		double ev = 0;
+		Moves mvs;
+		if( bt ) {
+			ev = bd.negaMaxRMC(mvs, nn, d1, d2, 100);
+			if( !mvs.empty() )
+				bd.b_move(mvs);
+		} else {
+			MovesList lst;
+			bd.w_genMovesList(lst, d1, d2);
+			if (!lst.empty()) {
+				mvs = lst[g_mt() % lst.size()];
+				bd.w_move(mvs);
+			}
+		}
+		cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+		for(auto mv: mvs) cout << mv.text(bt) << " ";
+		cout << "\n";
+		cout << bd.text();	// << "\n";
+		if( bd.result() != 0 ) break;
+		if( bt ) {
+			cout << "ev = " << ev << "\n";
+		}
+#if	0
+		if( !bt ) {
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n";
+		} else {
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n";
+		}
+#endif
+		cout << "\n";
+		cout << "\n";
+	}
+}
+void test_negaMaxMC_random()
+{
+	HGNNet nn;
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
+	assert( rc );
+	HGBoard bd;
+	cout << bd.text() << "\n";
+	bool bt = true;
+	for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+		int d1, d2;
+		do {
+			d1 = g_mt() % 3 + 1;
+			d2 = g_mt() % 3 + 1;
+		} while (d1 == d2 && cnt == 1);
+		Moves mvs;
+		if( bt ) {
+			bd.negaMaxMC(mvs, nn, d1, d2, 10);
+			if( !mvs.empty() )
+				bd.b_move(mvs);
+		} else {
+			MovesList lst;
+			bd.w_genMovesList(lst, d1, d2);
+			if (!lst.empty()) {
+				mvs = lst[g_mt() % lst.size()];
+				bd.w_move(mvs);
+			}
+		}
+		cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+		for(auto mv: mvs) cout << mv.text() << " ";
+		cout << "\n";
+		cout << bd.text();	// << "\n";
+		if( bd.result() != 0 ) break;
+		if( !bt ) {
+			cout << "black: exp score = " << bd.b_expctScore(nn) << "\n";
+		} else {
+			cout << "white: exp score = " << bd.w_expctScore(nn) << "\n";
+		}
+		cout << "\n";
+		cout << "\n";
 	}
 }
 void test_negaMax1_random_stat(int N_GAME)
@@ -1508,7 +1724,7 @@ void test_negaMax1_random_stat(int N_GAME)
 	cout << "Black(NN) vs White(Random):\n";
 	HGNNet nn;
 	//bool rc = nn.load("RPO1000x10.txt");
-	bool rc = nn.load("NNPO2000x20.txt");
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
 	assert( rc );
 	HGBoard bd;
 	int nBlackWin = 0;
@@ -1526,6 +1742,56 @@ void test_negaMax1_random_stat(int N_GAME)
 			Moves mvs;
 			if( bt ) {
 				bd.negaMax1(mvs, nn, d1, d2);
+				if( !mvs.empty() )
+					bd.b_move(mvs);
+			} else {
+				MovesList lst;
+				bd.w_genMovesList(lst, d1, d2);
+				if (!lst.empty()) {
+					mvs = lst[g_mt() % lst.size()];
+					bd.w_move(mvs);
+				}
+			}
+			//cout << cnt << ") " << (bt?"black ":"white ") << d1 << d2 << ": ";
+			//for(auto mv: mvs) cout << mv.text() << " ";
+			//cout << "\n";
+			//cout << bd.text();	// << "\n";
+			if( bd.result() != 0 ) break;
+			if( !bt ) {
+				//cout << "black: exp score = " << bd.b_expctScore(nn) << "\n\n";
+			} else {
+				//cout << "white: exp score = " << bd.w_expctScore(nn) << "\n\n";
+			}
+		}
+		if( bd.result() > 0 ) nBlackWin += 1;
+	}
+	cout << "\n";
+	cout << "Black win rate: " << nBlackWin << " / " << N_GAME << " = " << nBlackWin*100.0/N_GAME << "%\n";
+}
+void test_negaMaxMC_random_stat(int N_GAME)
+{
+	cout << "Black(NN) vs White(Random):\n";
+	HGNNet nn;
+	//bool rc = nn.load("RPO1000x10.txt");
+	bool rc = nn.load("nn/RPO1000x10-001.txt");
+	assert( rc );
+	HGBoard bd;
+	int nBlackWin = 0;
+	for (int gc = 0; gc != N_GAME; ++gc) {
+		//if( gc % 10 == 0 )
+			cout << ".";
+		bd.init();
+		//cout << bd.text() << "\n";
+		bool bt = true;
+		for(int cnt = 1; ; ++cnt, bt = !bt) {		//	終局でない間
+			int d1, d2;
+			do {
+				d1 = g_mt() % 3 + 1;
+				d2 = g_mt() % 3 + 1;
+			} while (d1 == d2 && cnt == 1);
+			Moves mvs;
+			if( bt ) {
+				bd.negaMaxMC(mvs, nn, d1, d2, 10);
 				if( !mvs.empty() )
 					bd.b_move(mvs);
 			} else {
